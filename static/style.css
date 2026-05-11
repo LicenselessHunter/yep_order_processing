@@ -1,0 +1,40 @@
+button {
+    cursor: pointer;
+}
+
+/*---- supbar ----*/
+#supbar {
+    position: fixed; 
+    width: 100%; 
+    background-color: black; 
+    height: 2em; 
+    top: 0; 
+    left: 0; 
+    display: flex; 
+    align-items: center; 
+    justify-content: flex-end;
+    z-index: 1;
+}
+
+
+#showcase {
+    margin-left: 8em;
+    margin-top: 4em;
+    z-index: -1;
+}
+
+.order_totals_container {
+    display: flex;
+    gap: 30px;
+}
+
+.order_totals {
+    padding: 10px;
+    background-color: rgb(161, 156, 156);
+    width: 15em;
+}
+
+.order_totals p {
+    display: flex;
+    justify-content: space-between;
+}

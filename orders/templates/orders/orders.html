@@ -2,8 +2,33 @@
 
 {% block title %}Órdenes de {{marketplace_instance}}{% endblock %}
 
+{% block supbar_btns %}
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" name="update_today_orders" style="position: relative; right: 15em;">Actualizar órdenes</button>
+</form>
+
+{% endblock %}
+
 {% block content %}
 
 <h1>Órdenes de {{marketplace_instance}}</h1>
+
+<div class="order_totals_container">
+    <div id="ml_collect_totals" class="order_totals">
+        <h3>Colecta</h3>
+        <p>Etiquetas por imprimir: <span>{{ collect_ready_to_print.count }}</span></p> <!--#span - abarcar. Es un contenedor en línea. Sirve para aplicar estilo al texto o agrupar elementos en línea. Por definición span no debe tener ningún estilo predefinido. The span tag is easily styled by CSS or manipulated with JavaScript using the class or id attribute.-->
+        <p>Pedidos listos para despacho: <span>{{ collect_ready_to_ship.count }}</span></p>
+        <p>Pedidos cancelados: <span></span></p>
+    </div>
+
+    <div id="ml_flex_totals" class="order_totals">
+        <h3>Flex</h3>
+        <p>Etiquetas por imprimir: <span>{{ flex_ready_to_print.count }}</span></p>
+        <p>Pedidos listos para despacho: <span>{{ flex_ready_to_ship.count }}</span></p>
+        <p>Pedidos cancelados: <span></span></p>
+    </div>
+</div>
 
 {% endblock %}
