@@ -53,7 +53,7 @@ class order(models.Model):
     estimated_pickup_time = models.DateTimeField(null=True)
 
     def __str__(self):
-        return f"Order {self.order_id} - {self.estimated_pickup_time} - {self.order_type} - {self.client_nickname}"
+        return f"Order {self.order_id} - {self.order_type} - {self.status}"
 
 
 class order_product(models.Model):

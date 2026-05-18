@@ -37,4 +37,67 @@ button {
 .order_totals p {
     display: flex;
     justify-content: space-between;
+    cursor: pointer;
+    padding: 1px;
+}
+
+.order_totals p:hover {
+    background-color: rgb(130, 126, 126);
+}
+
+
+
+/*---- orders css ----*/
+.order_totals_container {
+    display: flex;
+    gap: 20px;
+    width: 80vw;
+}
+
+.orders_title {
+    display: none;
+    background-color: black; 
+    color: white; 
+    width: 79vw; 
+    padding-left: 15px; 
+    padding-top: 3px; 
+    padding-bottom: 3px;
+}
+
+
+.orders_container {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    width: 80vw;
+}
+
+.order_card {
+    border: 1px solid rgb(161, 156, 156);
+}
+
+.order_header {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    background-color: rgb(230, 230, 230);
+    padding: 6px 12px;
+}
+
+.order_id {
+    font-weight: bold;
+}
+
+.order_products_container {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    gap: 6px;
+}
+
+.order_product_row {
+    display: flex;
+    gap: 30px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgb(220, 220, 220);
 }

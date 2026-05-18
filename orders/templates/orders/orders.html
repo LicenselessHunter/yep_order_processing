@@ -1,6 +1,7 @@
 {% extends 'global.html' %}
-
+{% load static %} <!--Módulo para static files. The load static tag does not load static files. It’s purpose is to allow you to use the static tag in your template.-->
 {% block title %}Órdenes de {{marketplace_instance}}{% endblock %}
+
 
 {% block supbar_btns %}
 
@@ -18,17 +19,45 @@
 <div class="order_totals_container">
     <div id="ml_collect_totals" class="order_totals">
         <h3>Colecta</h3>
-        <p>Etiquetas por imprimir: <span>{{ collect_ready_to_print.count }}</span></p> <!--#span - abarcar. Es un contenedor en línea. Sirve para aplicar estilo al texto o agrupar elementos en línea. Por definición span no debe tener ningún estilo predefinido. The span tag is easily styled by CSS or manipulated with JavaScript using the class or id attribute.-->
-        <p>Pedidos listos para despacho: <span>{{ collect_ready_to_ship.count }}</span></p>
-        <p>Pedidos cancelados: <span></span></p>
+        <p id="toggle_collect_print">Etiquetas por imprimir <span>{{ collect_ready_to_print_total }}</span></p> <!--#span - abarcar. Es un contenedor en línea. Sirve para aplicar estilo al texto o agrupar elementos en línea. Por definición span no debe tener ningún estilo predefinido. The span tag is easily styled by CSS or manipulated with JavaScript using the class or id attribute.-->
+        <p id="toggle_collect_ship">Pedidos listos para despacho <span>{{ collect_ready_to_ship_total }}</span></p>
     </div>
 
     <div id="ml_flex_totals" class="order_totals">
         <h3>Flex</h3>
-        <p>Etiquetas por imprimir: <span>{{ flex_ready_to_print.count }}</span></p>
-        <p>Pedidos listos para despacho: <span>{{ flex_ready_to_ship.count }}</span></p>
-        <p>Pedidos cancelados: <span></span></p>
+        <p id="toggle_flex_print">Etiquetas por imprimir <span>{{ flex_ready_to_print_total }}</span></p>
+        <p id="toggle_flex_ship">Pedidos listos para despacho <span>{{ flex_ready_to_ship_total }}</span></p>
     </div>
 </div>
 
+<h2 class="orders_title"></h2>
+
+
+{% for section in orders_queries_dict %}
+    <div id="{{ section.div_id }}" class="orders_container">
+        {% for order in section.orders_query %}
+            <div class="order_card">
+                <div class="order_header">
+                    <span class="order_id">#{{ order.order_id }}</span>
+                    <span>{{ order.creation_date_time }}</span>
+                    <span>{{ order.client_nickname }}</span>
+                </div>
+                <div class="order_products_container">
+                    {% for product in order.order_product_set.all %}
+                        <div class="order_product_row">
+                            <span>SKU vendedor: {{ product.sku_seller }}</span>
+                            <span>SKU marketplace: {{ product.sku_marketplace }}</span>
+                            <span>{{ product.quantity }} unidad(es)</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endfor %}
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'orders.js' %}"></script>
 {% endblock %}

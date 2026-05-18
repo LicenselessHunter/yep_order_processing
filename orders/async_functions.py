@@ -72,6 +72,18 @@ def search_orders(offset_value):
     return response
 
 
+def get_pack(pack_id):
+    access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
+
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+
+    response = requests.get(f'https://api.mercadolibre.com/packs/{pack_id}', headers=headers)
+
+    return response
+
+
 def get_shipping_data(shipping_id):
     access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
 
@@ -96,6 +108,7 @@ def get_max_dispatch_time(shipping_id):
     return response
 
 
+
 def update_today_ml_orders():
 
     offset_value = 0
@@ -103,6 +116,7 @@ def update_today_ml_orders():
 
     orders_dict = json.loads(orders_response.text)
     total_orders = orders_dict['paging']['total']
+    
 
     ml_marketplace = marketplace.objects.get(slug='mercado-libre')
     valid_orders_ids = set()  #Recolecta IDs devueltos por la API. Este set se va a usar para contener las ids de todas las ordenes validas (Que se consideran para hoy de mercado libre) recibidas por la api de mercado libre. Toda orden que exista dentro de la base de datos de este software, pero que no tenga su id registrada en este set, será eliminada. Esto es para actualizar las ordenes actuales dentro de este software, eliminado las ordenes que ya no tienen status válidos. 
@@ -111,7 +125,39 @@ def update_today_ml_orders():
 
         for order_data in orders_dict['results']:
 
-            estimated_response = get_max_dispatch_time(order_data['shipping']['id'])
+            #----- PROCESAR PACK -----
+            if order_data['pack_id'] != None:
+                
+                try:
+                    order.objects.get(order_id=order_data['pack_id'])
+
+                except:
+                    pack_response = get_pack(order_data['pack_id'])
+                    pack_dict = json.loads(pack_response.text)
+
+                    order_id = pack_dict['id']
+                    shipping_id = pack_dict['shipment']['id']
+                    created_date_time = pack_dict['date_created']
+
+                else:
+                    pack_order = order.objects.get(order_id=order_data['pack_id'])
+                    order_id = pack_order.order_id
+                    shipping_id = pack_order.shipping_id
+                    created_date_time = pack_order.creation_date_time
+
+
+
+            #----- EN CASO DE QUE SEA UNA ORDEN NO ASOCIADA A UN PACK -----
+            else:
+                order_id = order_data['id']
+                shipping_id = order_data['shipping']['id']
+                created_date_time = order_data['date_created']
+
+            #SE RECOGE EL NICKNAME DEL USUARIO INDEPENDIENTE SI ES UN PACK O UNA ORDEN NORMAL
+            client_nickname = order_data['buyer']['nickname']
+
+            #----- DESCARTAR ORDENES QUE NO SON PARA DESPACHAR HOY -----
+            estimated_response = get_max_dispatch_time(shipping_id)
             estimated_dict = json.loads(estimated_response.text)
 
             expected_dispatch_time = datetime.fromisoformat(estimated_dict['expected_date'].replace('Z', '+00:00')).date()
@@ -121,7 +167,8 @@ def update_today_ml_orders():
                 continue
 
 
-            shipping_response = get_shipping_data(order_data['shipping']['id'])
+            #----- DETERMINAR STATUS DE ORDEN ------
+            shipping_response = get_shipping_data(shipping_id)
             shipping_dict = json.loads(shipping_response.text)
 
             if shipping_dict['logistic']['type'] == 'cross_docking':
@@ -133,24 +180,27 @@ def update_today_ml_orders():
             if shipping_dict['substatus'] == 'ready_to_print':
                 order_status = 'ready_to_print'
 
+            #substatus == 'ready_for_pickup' --> colecta
+            #substatus == 'printed' --> flex
             elif shipping_dict['substatus'] == 'ready_for_pickup' or shipping_dict['substatus'] == 'printed':
                 order_status = 'ready_to_ship'
 
 
+
             #------ CREATE ORDER ------
             processing_order, new_order = order.objects.get_or_create(
-                order_id = str(order_data['id']),
+                order_id = str(order_id),
                 defaults= {
                     'marketplace': ml_marketplace,
-                    'shipping_id': str(order_data['shipping']['id']),
+                    'shipping_id': str(shipping_id),
                     'order_type': logistic_type,
-                    'client_nickname': order_data['buyer']['nickname'],
+                    'client_nickname': client_nickname,
                     'status': order_status,
-                    'creation_date_time': order_data['date_created'],
+                    'creation_date_time': created_date_time,
                     'estimated_pickup_time': estimated_dict['expected_date'],
                 }
             )
-
+            
             if new_order:
                 for order_item in order_data['order_items']:
                     order_product.objects.create(
@@ -163,13 +213,28 @@ def update_today_ml_orders():
             #------ UPDATE EXISTING ORDER IF NECESSARY-----
             if not new_order:
                 
+                #SI ES QUE ESTA ORDEN CORRESPONDE A UN PACK
+                if order_data['pack_id'] != 'null':
+
+                    for order_item in order_data['order_items']:
+                        try: 
+                            order_product.objects.get(order=processing_order, sku_marketplace=order_item['item']['id'])
+
+                        except:
+                            order_product.objects.create(
+                                order=processing_order,
+                                sku_seller=order_item['item'].get('seller_sku', ''),
+                                sku_marketplace=order_item['item']['id'],
+                                quantity=order_item['quantity'],
+                            )
+                
                 if processing_order.status != order_status:
                     processing_order.status = order_status
                     processing_order.save()
             
-            valid_orders_ids.add(str(order_data['id']))  #registra cada ID
+            valid_orders_ids.add(str(order_id))  #registra cada ID
 
-        offset_value += 51
+        offset_value += 51 #El recurso "Buscar Ordenes" de mercado libre tiene un límite de 51 items, es por esto que se le tiene que sumar al offset y llamar al recurso denuevo si se requieren más órdenes aparte de las primeras 51.
 
         orders_response = search_orders(offset_value)
         orders_dict = json.loads(orders_response.text)
@@ -178,4 +243,3 @@ def update_today_ml_orders():
             break
 
     order.objects.filter(marketplace=ml_marketplace).exclude(order_id__in=valid_orders_ids).delete() #Finalmente, se eliminan la ordenes dentro del sistema que no entrego el recurso de la api de mercado libre "buscar ordenes".
-    
