@@ -4,7 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import date, datetime, timedelta
 from .models import ml_credentials, marketplace, order, order_product
-
+from pathlib import Path
 
 
 def ml_refresh_token(user_id):
@@ -106,6 +106,29 @@ def get_max_dispatch_time(shipping_id):
 
     response = requests.get(f'https://api.mercadolibre.com/shipments/{shipping_id}/sla', headers=headers)
     return response
+
+
+
+
+def get_shipmnet_label(shipping_ids_string):
+    access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
+
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+
+    # Carpeta Descargas del usuario actual en Windows
+    carpeta_descargas = Path('/mnt/c/Users/elias/Downloads')
+
+    response = requests.get(f'https://api.mercadolibre.com/shipment_labels?shipment_ids={shipping_ids_string}&response_type=pdf', headers=headers)
+
+    if response.status_code == 200:
+        ruta_archivo = carpeta_descargas / f"etiquetas_ml.pdf"
+        with open(ruta_archivo, "wb") as f:
+            f.write(response.content)
+        print(f"Etiqueta guardada en: {ruta_archivo}")
+    else:
+        print(f"Error {response.status_code}: {response.text}")
 
 
 
@@ -243,3 +266,22 @@ def update_today_ml_orders():
             break
 
     order.objects.filter(marketplace=ml_marketplace).exclude(order_id__in=valid_orders_ids).delete() #Finalmente, se eliminan la ordenes dentro del sistema que no entrego el recurso de la api de mercado libre "buscar ordenes".
+
+    
+def print_ml_orders(organized_ml_orders):
+
+    shipping_ids_string = str(list(organized_ml_orders.values_list('shipping_id', flat=True))).replace(" ", "").replace("'", "")[1:-1]
+    #values_list() --> Returns a QuerySet as a tuple. Las tuplas en Python son un tipo o estructura de datos que permite almacenar datos de una manera muy parecida a las listas, con la salvedad de que son inmutables.
+
+    #flat=True --> If you only pass in a single field, you can also pass in the flat parameter. If True, this will mean the returned results are single values, rather than 1-tuples. An example should make the difference clearer:
+    #Sin flat: <QuerySet[(1,), (2,), (3,), ...]>
+    #Con flat: <QuerySet [1, 2, 3, ...]>
+
+    #str(list()).replace(" ", "") --> Primero se va a convertir en lista para que sea mutable, luego se converira a string.
+    #Antes: <QuerySet [1, 2, 3, ...]>
+    #Después: "[1,2,3,...]"
+
+    #[1:-1] --> Finalmente, se quitarán los corchetes de la lista. Con esto, los shippings ids tendrán el formato para ser aceptado por el recurso de impresión de etiquetas de API de ML.
+
+    get_shipmnet_label(shipping_ids_string)
+    update_today_ml_orders()

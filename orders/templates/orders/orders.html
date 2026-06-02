@@ -7,8 +7,16 @@
 
 <form method="post">
     {% csrf_token %}
-    <button type="submit" name="update_today_orders" style="position: relative; right: 15em;">Actualizar órdenes</button>
+    <button type="submit" name="update_today_orders">Actualizar órdenes</button>
 </form>
+
+{% if collect_ready_to_print_total != 0 %}
+    <button id="collect_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir órdenes</button>
+{% endif %}
+
+{% if flex_ready_to_print_total != 0 %}
+    <button id="flex_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir órdenes</button>
+{% endif %}
 
 {% endblock %}
 
@@ -19,20 +27,41 @@
 <div class="order_totals_container">
     <div id="ml_collect_totals" class="order_totals">
         <h3>Colecta</h3>
-        <p id="toggle_collect_print">Etiquetas por imprimir <span>{{ collect_ready_to_print_total }}</span></p> <!--#span - abarcar. Es un contenedor en línea. Sirve para aplicar estilo al texto o agrupar elementos en línea. Por definición span no debe tener ningún estilo predefinido. The span tag is easily styled by CSS or manipulated with JavaScript using the class or id attribute.-->
-        <p id="toggle_collect_ship">Pedidos listos para despacho <span>{{ collect_ready_to_ship_total }}</span></p>
+
+        {% if collect_ready_to_print_total != 0 %}
+            <p id="toggle_collect_print">Etiquetas por imprimir <span>{{ collect_ready_to_print_total }}</span></p>
+        {% else %}
+            <p>Etiquetas por imprimir <span>{{ collect_ready_to_print_total }}</span></p>
+        {% endif %}
+
+        {% if collect_ready_to_ship_total != 0 %}
+            <p id="toggle_collect_ship">Pedidos listos para despacho <span>{{ collect_ready_to_ship_total }}</span></p>
+        {% else %}
+            <p>Pedidos listos para despacho <span>{{ collect_ready_to_ship_total }}</span></p>
+        {% endif %}
+
     </div>
 
     <div id="ml_flex_totals" class="order_totals">
         <h3>Flex</h3>
-        <p id="toggle_flex_print">Etiquetas por imprimir <span>{{ flex_ready_to_print_total }}</span></p>
-        <p id="toggle_flex_ship">Pedidos listos para despacho <span>{{ flex_ready_to_ship_total }}</span></p>
+        {% if flex_ready_to_print_total != 0 %}
+            <p id="toggle_flex_print">Etiquetas por imprimir <span>{{ flex_ready_to_print_total }}</span></p>
+        {% else %}
+            <p>Etiquetas por imprimir <span>{{ flex_ready_to_print_total }}</span></p>
+        {% endif %}
+
+        {% if flex_ready_to_ship_total != 0 %}
+            <p id="toggle_flex_ship">Pedidos listos para despacho <span>{{ flex_ready_to_ship_total }}</span></p>
+        {% else %}
+            <p>Pedidos listos para despacho <span>{{ flex_ready_to_ship_total }}</span></p>
+        {% endif %}
+    
     </div>
 </div>
 
 <h2 class="orders_title"></h2>
 
-
+<!-- Aquí se despliegan los registros de cada tipo y status de las ordenes de mercado libre, el data de estos se saca del diccionario "orders_queries_dict". Se hace esto para no tener que escribir este mismo contenido html múltiples veces-->
 {% for section in orders_queries_dict %}
     <div id="{{ section.div_id }}" class="orders_container">
         {% for order in section.orders_query %}
@@ -56,6 +85,48 @@
     </div>
 {% endfor %}
 
+{% endblock %}
+
+
+{% block modal %}
+<!--  -->
+{% for section in organized_orders_dict %}
+    <div id="{{ section.div_id }}" class="modal">
+
+        <div class="modal-content">
+            <form method="POST">
+            {% csrf_token %}
+                <h2>Estás a punto de imprimir las siguientes {{ section.orders_query.count }} órdenes</h2>
+
+                <table class="modal_print_table">
+                    <thead>
+                        <tr>
+                            <th>Orden</th>
+                            <th>SKU vendedor</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in section.orders_query %}
+                            {% for product in order.order_product_set.all %}
+                            <tr>
+                                {% if forloop.first %}
+                                <td rowspan="{{ order.order_product_set.count }}">{{ order.order_id }}</td>
+                                {% endif %}
+                                <td>{{ product.sku_seller }}</td>
+                                <td>{{ product.quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+
+                <p><button name="{{ section.btn_name }}">Confirmar</button></p>
+            </form>
+        </div>
+    </div>
+{% endfor %}
 {% endblock %}
 
 {% block page_scripts %}

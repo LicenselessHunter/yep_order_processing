@@ -10,11 +10,22 @@ button {
     height: 2em; 
     top: 0; 
     left: 0; 
-    display: flex; 
+    display: flex;
+    gap: 10px;
     align-items: center; 
     justify-content: flex-end;
     z-index: 1;
 }
+
+#supbar button {
+    position: relative; 
+    right: 15em;
+}
+
+#print_button {
+    display: none;
+}
+
 
 
 #showcase {
@@ -100,4 +111,57 @@ button {
     gap: 30px;
     padding: 6px 0;
     border-bottom: 1px solid rgb(220, 220, 220);
+}
+
+/*---- global modal css ----*/
+
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    z-index: 1;
+}
+
+.modal-content {
+    margin-left: auto;
+    margin-right: auto;
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+    margin-top: 4em;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 45%;
+    background-color: rgb(88, 84, 84);
+}
+
+.modal-content h2 {
+    color: white;
+}
+
+.modal_print_table {
+    text-align: center; 
+    border-collapse: collapse;
+    width: 90%;
+}
+
+.modal_print_table thead {
+    background-color: black; 
+    color: white;
+}
+
+.modal_print_table tr {
+    border-bottom: 5px solid rgb(88, 84, 84);
+}
+
+.modal_print_table th, td {
+    padding: 0.5em;
+}
+
+
+.modal_print_table tbody {
+    background-color: white;
 }
