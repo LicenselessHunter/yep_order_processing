@@ -33,7 +33,7 @@ class marketplace(models.Model):
 
 
 class order(models.Model):
-    ORDER_TYPE_CHOICES = [
+    LOGISTIC_TYPE_CHOICES = [
         ('collect', 'ML Colecta'),
         ('flex', 'ML Flex'),
     ]
@@ -46,14 +46,23 @@ class order(models.Model):
     marketplace = models.ForeignKey(marketplace, on_delete=models.CASCADE)
     order_id = models.CharField(max_length=100)
     shipping_id = models.CharField(max_length=100, blank=True)
-    order_type = models.CharField(max_length=20, blank=True, choices=ORDER_TYPE_CHOICES)
+    logistic_type = models.CharField(max_length=20, blank=True, choices=LOGISTIC_TYPE_CHOICES)
     client_nickname = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=20, blank=True, choices=ORDER_STATUS)
     creation_date_time = models.DateTimeField(null=True)
     estimated_pickup_time = models.DateTimeField(null=True)
 
     def __str__(self):
-        return f"Order {self.order_id} - {self.shipping_id} - {self.order_type} - {self.status}"
+        return f"Order {self.order_id} - {self.shipping_id} - {self.logistic_type} - {self.status}"
+
+    #Model metadata is "anything that’s not a field", such as ordering options (ordering), database table name (db_table), or human-readable singular and plural names (verbose_name and verbose_name_plural). None are required, and adding class Meta to a model is completely optional.
+
+    #Meta is a word that originates from the ancient Greeks and it means "meta is used to describe something that's self-reflective or self-referencing.". Specific to Django it is a class in which you describe certain aspects of your model. For example how the records should be ordered by default, what the name of the database table for that model is, etc.
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['order_id', 'marketplace'], name='unique_order_per_marketplace') #A list of field names that specifies the unique set of columns you want the constraint to enforce. Esto asegura que no pueda existir un mismo order id para un marketplace.
+        ]
 
 
 class order_product(models.Model):
@@ -64,3 +73,11 @@ class order_product(models.Model):
 
     def __str__(self):
         return f"{self.order} - {self.sku_seller} (x{self.quantity})"
+
+
+
+class api_error(models.Model):
+    api_status_code = models.IntegerField()
+    api_response_text = models.TextField()
+    api_response_url = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True) #auto_now_add --> automatically set the field to the current date and time when the model instance is first created.

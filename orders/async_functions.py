@@ -1,271 +1,388 @@
 import json
-import requests
 from django.conf import settings
-from django.utils import timezone
-from datetime import date, datetime, timedelta
-from .models import ml_credentials, marketplace, order, order_product
-from pathlib import Path
+from datetime import date, datetime
+from .models import marketplace, order, order_product
+from .ml_api_resources import search_orders, get_order_data, get_pack_data, get_shipping_data, get_shipping_items, get_max_dispatch_time, get_shipment_label, get_user_data, create_api_error
+from django.db import transaction #module that provides a few ways to control how database transactions are managed.
+#Django’s default transaction behavior:
+#Django’s default behavior is to run in autocommit mode. Each query is immediately committed to the database, unless a transaction is active. Django uses transactions or savepoints automatically to guarantee the integrity of ORM operations that require multiple queries, especially delete() and update() queries.
 
 
-def ml_refresh_token(user_id):
-    #---- REFRESH TOKEN ----
 
-    #Ten en cuenta que el access token generado expirará transcurridas 6 horas desde que se solicitó. Por eso, para asegurar que puedas trabajar por un tiempo prolongado y no sea necesario solicitar constantemente al usuario que se vuelva a loguear para generar un token nuevo, te brindamos la solución de trabajar con un refresh token. Además, recuerda que el refresh_token es de uso único y recibirás uno nuevo en cada proceso de actualización del token.
+def inspect_order_status(order_status):
+    
+    #---- Se verifica si la orden corresponde a un acuerdo de entrega y tiene status = paid (orden normal) o status = released (orden pack) ----
+    if order_status != 'paid' and order_status != 'released':     
+        return False
 
-    ml_creds = ml_credentials.objects.get(user_id=user_id)
-
-
-    headers = {
-        'accept': 'application/json',
-        'content-type': 'application/x-www-form-urlencoded',
-    }
-
-    payload = {
-        'grant_type': 'refresh_token', #refresh_token indica que la operación deseada es actualizar un token.
-        'client_id': settings.ML_CLIENT_ID, #client_id que aparece en la página de credenciales de ML.
-        'client_secret': settings.ML_CLIENT_SECRET, #client_secret que aparece en la página de credenciales de ML.
-        'refresh_token': ml_creds.refresh_token #El refresh token que aparecio en la última respuesta de este mismo recurso, se deberá usar para generar un nuevo tojen una vez que el actual expire.
-    }
-
-    response = requests.post('https://api.mercadolibre.com/oauth/token', headers=headers, data=payload)
-
-    if response.status_code == 200:
-        token_data = response.json()
-        ml_creds.access_token = token_data['access_token']
-        ml_creds.refresh_token = token_data['refresh_token']
-        ml_creds.expires_at = timezone.now() + timedelta(seconds=token_data['expires_in']) #Se toma el tiempo actual y se usa timedelta para sumarle los 21600 segundos (o 6 horas) con la fecha resultante siendo la fecha en donde va a expirar el nuevo access_token.
-        ml_creds.save()
-        print('')
-        print('access_token restaurado :)')
-        print('')
-
-        return ml_creds.access_token
+    return True
 
 
-def ml_access_token():
-    ml_creds = ml_credentials.objects.get(user_id=settings.ML_SELLER_ID)
+def inspect_logistic_type(shipping_dict):
+    if shipping_dict['logistic']['type'] == 'cross_docking':
+        logistic_type = 'collect'
 
-    if ml_creds.is_expired():
-        print('')
-        print('access_token caducado :(')
-        print('')
-        access_token = ml_refresh_token(ml_creds.user_id)
+    elif shipping_dict['logistic']['type'] == 'self_service':
+        logistic_type = 'flex'
 
     else:
-        access_token = ml_creds.access_token
+        processing_order.delete()
+        print('La orden no es colecta ni flex')
+        print('')
+        return False
 
-    return access_token
-
-def search_orders(offset_value):
-
-    access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
-
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-    }
+    return logistic_type
 
 
-    #response = requests.get('https://api.mercadolibre.com/orders/search?seller=752198086&order.status=paid', headers=headers)
+def inspect_estimated_dispatch_time(shipping_id):
+    estimated_response = get_max_dispatch_time(shipping_id)
+    if estimated_response.status_code != 200:
+        create_api_error(estimated_response)
+        return False
+    estimated_dict = json.loads(estimated_response.text)
 
-    response = requests.get(f'https://api.mercadolibre.com/orders/search?seller={settings.ML_SELLER_ID}&order.status=paid&shipping.substatus=ready_to_print,ready_for_pickup,printed&offset={offset_value}&sort=date_desc', headers=headers)
+    print(estimated_dict)
 
-    return response
+    try:
+        expected_dispatch_time = datetime.fromisoformat(estimated_dict['expected_date'].replace('Z', '+00:00')).date()
 
+    except:
+        expected_dispatch_time = None
 
-def get_pack(pack_id):
-    access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
-
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-    }
-
-    response = requests.get(f'https://api.mercadolibre.com/packs/{pack_id}', headers=headers)
-
-    return response
-
-
-def get_shipping_data(shipping_id):
-    access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
-
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'x-format-new': 'true',
-    }
-
-    response = requests.get(f'https://api.mercadolibre.com/shipments/{shipping_id}', headers=headers)
-
-    return response  
+    return expected_dispatch_time
 
 
-def get_max_dispatch_time(shipping_id):
-    access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
+def inspect_shipping_status(shipping_dict):
+    if shipping_dict['substatus'] == 'ready_to_print':
+        shipping_status = 'ready_to_print'
 
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-    }
+    #substatus == 'ready_for_pickup' --> colecta
+    #substatus == 'printed' --> flex
+    elif shipping_dict['substatus'] == 'ready_for_pickup' or shipping_dict['substatus'] == 'printed':
+        shipping_status = 'ready_to_ship'
 
-    response = requests.get(f'https://api.mercadolibre.com/shipments/{shipping_id}/sla', headers=headers)
-    return response
-
-
-
-
-def get_shipmnet_label(shipping_ids_string):
-    access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
-
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-    }
-
-    # Carpeta Descargas del usuario actual en Windows
-    carpeta_descargas = Path('/mnt/c/Users/elias/Downloads')
-
-    response = requests.get(f'https://api.mercadolibre.com/shipment_labels?shipment_ids={shipping_ids_string}&response_type=pdf', headers=headers)
-
-    if response.status_code == 200:
-        ruta_archivo = carpeta_descargas / f"etiquetas_ml.pdf"
-        with open(ruta_archivo, "wb") as f:
-            f.write(response.content)
-        print(f"Etiqueta guardada en: {ruta_archivo}")
     else:
-        print(f"Error {response.status_code}: {response.text}")
+        return False
+
+    return shipping_status
+
+
+def create_products_for_order(processing_order, order_items):
+
+    for item in order_items:
+        order_product.objects.create(
+            order=processing_order,
+            sku_seller=item['item'].get('seller_sku', ''),
+            sku_marketplace=item['item']['id'],
+            quantity=item['quantity'],
+        )
+
+
+def process_order(order_data, order_type):
+    
+    #get_or_create() --> A convenience method for looking up an object with the given kwargs (may be empty if your model has defaults for all fields), creating one if necessary. Returns a tuple of (object, created), where object is the retrieved or created object and created is a boolean specifying whether a new object was created.
+
+    #get_or_create() Ayuda a prevenir duplicados, pero en el caso que reciba múltiples procesos concurrentes que quieran crear un objeto, no es suficiente. Para esto se debe aplicar 'uniqueness' a nivel de la base de datos. Si se revisa el archivo 'models.py' se puede ver que esto se aplica en el model 'order' en su clase 'meta', permitiendo que por cada marketplace no puedan existir múltiples órdenes con el mismo order_id.
+
+    #En circunstancias normales, intentar crear objetos duplicados con 'uniqueness' aplicado, detonaría la excepción 'IntegrityError' y daría error en la ejecución, pero con get_or_create, detras de escena se capturaría esta excepción y se reintenta el get del objeto creado por el primer request.
+    processing_order, new_order = order.objects.get_or_create(
+        order_id=order_data['id'],
+        marketplace=marketplace.objects.get(slug='mercado-libre'),
+    )
+
+    if order_type == 'normal_order':
+        shipping_id = order_data['shipping']['id']
+
+    elif order_type == 'pack_order':
+        shipping_id = order_data['shipment']['id']
+
+    if shipping_id == None:
+        processing_order.delete()
+        print('La orden no tiene shipping_id')
+        print('')
+        return
+
+    
+    #----- ES UNA ORDEN YA EXISTENTE EN LA BASE DE DATOS -----
+    if not new_order:
+
+        #atomic() Atomicity is the defining property of database transactions. atomic allows us to create a block of code within which the atomicity on the database is guaranteed. If the block of code is successfully completed, the changes are committed to the database. If there is an exception, the changes are rolled back. 
+        #En este caso, el bloque sería todo lo que encierra 'transaction.atomic()', en lugar de hacer un autocommit a los queries de inmediato (Como lo hace django tradicionalmente), esta atomicidad va a asegurar que los cambios a la base de datos se completen si el bloque de código se completa con exito.
+        
+        with transaction.atomic():
+            #select_for_update: Returns a queryset that will lock rows until the end of the transaction (la transaction.atomic()), generating a SELECT ... FOR UPDATE SQL statement on supported databases. Esencialmente, cuando llegue un worker, esto va a poner un lock para evitar 2 o más workers hagan actualización al mismo producto al mismo tiempo.
+
+            #Tener en cuenta que select_for_update() no evita INSERTs (creaciones) concurrentes, solo bloquea registros en la base de datos si estos ya exitían con anterioridad en la base de datos. Es por esta razón que se tiene esto solo cuando se actualiza una orden. La creación concurrente de una misma órden se evita más arriba con el get_or_create y 'uniqueness' a nivel de base de datos. 
+            
+            try:
+                processing_order = order.objects.select_for_update().get(order_id=processing_order.order_id)
+
+            except order.DoesNotExist:
+                print('Otro worker anterior ya elimino esta orden, saliendo')
+                print('')
+                return
+
+            #VER SI ES UNA ORDEN PAGADA
+            if not inspect_order_status(order_data['status']):
+                processing_order.delete()
+                print('La orden no tiene status paid o released')
+                print('')
+                return
+                
+            #DETERMINAR STATUS DEL SHIPPING
+            shipping_response = get_shipping_data(shipping_id)
+            if shipping_response.status_code != 200:
+                create_api_error(shipping_response)
+                return
+            shipping_dict = json.loads(shipping_response.text)
+
+            shipping_status = inspect_shipping_status(shipping_dict)
+            if not shipping_status:
+                processing_order.delete()
+                print('Orden descartada por status no valido')
+                print('')
+                return
+
+
+            #SE ACTUALIZA EL STATUS DE LA ORDEN SI ES NECESARIO
+            if processing_order.status != shipping_status:
+                processing_order.status = shipping_status
+                processing_order.save()
+
+            print('Orden actualizada con exito.')
+            print('')
+            return True
+        
+
+    
+    #----- ES UNA NUEVA ORDEN, NO ESTÁ EN LA BASE DE DATOS -----
+
+    #VER SI ES UNA ORDEN PAGADA
+    if not inspect_order_status(order_data['status']):
+        processing_order.delete()
+        print('La orden no tiene status paid o released')
+        print('')
+        return
+    
+    #DETERMINAR TIPO LOGÍSTICO
+    shipping_response = get_shipping_data(shipping_id)
+    if shipping_response.status_code != 200:
+        processing_order.delete()
+        create_api_error(shipping_response)
+        return
+    shipping_dict = json.loads(shipping_response.text)
+    
+    logistic_type = inspect_logistic_type(shipping_dict)
+    if not logistic_type:
+        return
+
+
+    #DETERMINAR STATUS DEL SHIPPING
+    shipping_status = inspect_shipping_status(shipping_dict)
+    if not shipping_status:
+        #transaction.set_rollback(True)
+        processing_order.delete()
+        print('Orden descartada por status no valido')
+        print('')
+        return
+
+
+    #VER LA FECHA DE DESPACHO ESTIMADA DE LA ORDEN. SI NO ES PARA HOY O UNA FECHA ANTERIOR (Orden atrasada), LA ORDEN SE DESCARTA.
+    expected_dispatch_time = inspect_estimated_dispatch_time(shipping_id)
+    #if not expected_dispatch_time:
+    #    return
+    
+
+    #LA DATA DEL PACK NO TIENE EL NICKNAME DEL CLIENTE POR DEFECTO, ASÍ QUE SE OBTIENE VÍA API.
+    if order_type == 'pack_order':
+        user_data_response = get_user_data(order_data['buyer']['id'])
+        if user_data_response.status_code != 200:
+            processing_order.delete()
+            create_api_error(user_data_response)
+            return
+        user_data_dict = json.loads(user_data_response.text)
+        client_nickname = user_data_dict['nickname']
+    
+    else:
+        client_nickname = order_data['buyer']['nickname']
+
+
+    #ACTUALIZAR ORDEN RECIÉN CREADA
+    processing_order.shipping_id = shipping_id
+    processing_order.logistic_type = logistic_type
+    processing_order.client_nickname = client_nickname
+    processing_order.status = shipping_status
+    processing_order.creation_date_time = order_data['date_created']
+    processing_order.estimated_pickup_time = expected_dispatch_time
+    processing_order.marketplace = marketplace.objects.get(slug='mercado-libre')
+
+    processing_order.save()
+
+    #Se crean los registros de los productos asociados a la orden
+    if order_type == 'normal_order':
+        create_products_for_order(processing_order, order_data['order_items'])
+
+
+    elif order_type == 'pack_order':
+
+        for individual_order_id in order_data['orders']:
+            individual_order_response = get_order_data(individual_order_id['id'])
+            if individual_order_response.status_code != 200:
+                processing_order.delete()
+                create_api_error(individual_order_response)
+                return
+            individual_order_data = json.loads(individual_order_response.text)
+            create_products_for_order(processing_order, individual_order_data['order_items'])
+
+    print('Orden creada con exito.')
+    print('')
+    return True
 
 
 
-def update_today_ml_orders():
+def process_notification(notification_data):
+    topic = notification_data['topic']
+    resource = notification_data['resource']
+
+
+    if topic == 'orders_v2':
+        order_id = resource.split('/')[-1]
+
+        #---- Determinar si el order_id corresponde a un 'pack' o a una orden normal----
+        order_response = get_order_data(order_id)    
+
+        if order_response.status_code == 200: #Es orden normal
+            order_data = json.loads(order_response.text)
+
+            if order_data['pack_id'] is not None: #Si es que la orden pertenece a un PACK
+                pack_response = get_pack_data(order_data['pack_id'])
+                if pack_response.status_code != 200:
+                    create_api_error(pack_response)
+                    return
+                order_data = json.loads(pack_response.text)
+                print('')
+                print('orders_v2: Procesando PACK: ', str(order_data['id']))
+
+                order_type = 'pack_order'
+            
+            else:
+                print('')
+                print('orders_v2: Procesando orden: ', str(order_data['id']))
+
+                order_type = 'normal_order'
+
+
+        elif order_response.status_code == 404:
+            pack_response = get_pack_data(order_id)
+
+            if pack_response.status_code == 200: #Es PACK
+                order_data = json.loads(pack_response.text)
+                print('')
+                print('orders_v2: Procesando PACK: ', str(order_data['id']))
+
+                order_type = 'pack_order'
+
+            else:
+                create_api_error(pack_response)
+                return
+
+        else:
+            create_api_error(order_response)
+            return
+
+    elif topic == 'shipments':
+        shipping_id = resource.split('/')[-1]
+
+        shipping_items_response = get_shipping_items(shipping_id)
+        if shipping_items_response.status_code != 200:
+            create_api_error(shipping_items_response)
+            return
+        shipping_items_data = json.loads(shipping_items_response.text)
+
+        order_id = shipping_items_data[0]['order_id'] #Los items de un shipping solo considera órdenes normales, por lo que se toma la primera orden (puede ser cualquiera en realidad) y este se va a usar para determinar si pertenece a un PACK o no.
+        order_response = get_order_data(order_id)
+        if order_response.status_code != 200:
+            create_api_error(order_response)
+            return
+        order_data = json.loads(order_response.text)
+
+        if order_data['pack_id'] is not None: #Si es que la orden pertenece a un PACK
+
+            pack_response = get_pack_data(order_data['pack_id'])
+            if pack_response.status_code != 200:
+                create_api_error(pack_response)
+                return
+            order_data = json.loads(pack_response.text)
+            print('')
+            print('shipments: Procesando PACK: ', str(order_data['id']))
+            
+            order_type = 'pack_order'
+
+        else:
+            print('')
+            print('shipments: Procesando orden: ', str(order_data['id']))
+
+            order_type = 'normal_order'
+            
+    process_order(order_data, order_type)
+
+
+
+def manual_update_ml_orders():
 
     offset_value = 0
-    orders_response = search_orders(offset_value)
+    orders_response = search_orders(offset_value) #El recurso 'Buscar Ordenes' de la API de mercado libre, va a traer las ordenes validas para ingresar y actualizar dentro de este software. Hay que tener en cuenta que este recurso NO trae las órdenes PACK de manera exlicita, pero si trae las ordenes individuales contenidas en estas, por lo que se pueden obtener los PACKs a través de estas.
+
+    if orders_response.status_code != 200:
+        create_api_error(orders_response)
+        return
 
     orders_dict = json.loads(orders_response.text)
     total_orders = orders_dict['paging']['total']
     
 
-    ml_marketplace = marketplace.objects.get(slug='mercado-libre')
-    valid_orders_ids = set()  #Recolecta IDs devueltos por la API. Este set se va a usar para contener las ids de todas las ordenes validas (Que se consideran para hoy de mercado libre) recibidas por la api de mercado libre. Toda orden que exista dentro de la base de datos de este software, pero que no tenga su id registrada en este set, será eliminada. Esto es para actualizar las ordenes actuales dentro de este software, eliminado las ordenes que ya no tienen status válidos. 
+    valid_orders_ids = set()  #Recolecta IDs devueltos por la API. Este set se va a usar para contener las ids de todas las ordenes validas (Que se consideran para hoy de mercado libre) recibidas por la api de mercado libre. Toda orden que exista dentro de la base de datos de este software, pero que no tenga su id registrada en este set, será eliminada. Esto es para actualizar las ordenes actuales dentro de este software, eliminando las ordenes que ya no tienen status válidos. También se usará para evitar que se evalue un PACK múltiples veces.
 
     while True:
 
         for order_data in orders_dict['results']:
+            
+            if order_data['pack_id'] is not None: #Si es que la orden individual pertenece a un PACK
+                #Si el PACK ya fue evaluado.
+                if order_data['pack_id'] in valid_orders_ids:
+                    continue
 
-            #----- PROCESAR PACK -----
-            if order_data['pack_id'] != None:
-                
-                try:
-                    order.objects.get(order_id=order_data['pack_id'])
-
-                except:
-                    pack_response = get_pack(order_data['pack_id'])
-                    pack_dict = json.loads(pack_response.text)
-
-                    order_id = pack_dict['id']
-                    shipping_id = pack_dict['shipment']['id']
-                    created_date_time = pack_dict['date_created']
-
-                else:
-                    pack_order = order.objects.get(order_id=order_data['pack_id'])
-                    order_id = pack_order.order_id
-                    shipping_id = pack_order.shipping_id
-                    created_date_time = pack_order.creation_date_time
-
-
-
-            #----- EN CASO DE QUE SEA UNA ORDEN NO ASOCIADA A UN PACK -----
+                pack_response = get_pack_data(order_data['pack_id'])
+                if pack_response.status_code != 200:
+                    create_api_error(pack_response)
+                    continue
+                order_data = json.loads(pack_response.text)
+                print('')
+                print('Procesando PACK: ', str(order_data['id']))
+                process_order_bool = process_order(order_data, 'pack_order')                
+            
             else:
-                order_id = order_data['id']
-                shipping_id = order_data['shipping']['id']
-                created_date_time = order_data['date_created']
-
-            #SE RECOGE EL NICKNAME DEL USUARIO INDEPENDIENTE SI ES UN PACK O UNA ORDEN NORMAL
-            client_nickname = order_data['buyer']['nickname']
-
-            #----- DESCARTAR ORDENES QUE NO SON PARA DESPACHAR HOY -----
-            estimated_response = get_max_dispatch_time(shipping_id)
-            estimated_dict = json.loads(estimated_response.text)
-
-            expected_dispatch_time = datetime.fromisoformat(estimated_dict['expected_date'].replace('Z', '+00:00')).date()
-            today = date.today()
-
-            if expected_dispatch_time > today:
-                continue
+                print('')
+                print('Procesando orden: ', str(order_data['id']))
+                process_order_bool = process_order(order_data, 'normal_order')
 
 
-            #----- DETERMINAR STATUS DE ORDEN ------
-            shipping_response = get_shipping_data(shipping_id)
-            shipping_dict = json.loads(shipping_response.text)
+            if process_order_bool:
+                valid_orders_ids.add(str(order_data['id']))  #registra cada ID
 
-            if shipping_dict['logistic']['type'] == 'cross_docking':
-                logistic_type = 'collect'
-
-            elif shipping_dict['logistic']['type'] == 'self_service':
-                logistic_type = 'flex'
-
-            if shipping_dict['substatus'] == 'ready_to_print':
-                order_status = 'ready_to_print'
-
-            #substatus == 'ready_for_pickup' --> colecta
-            #substatus == 'printed' --> flex
-            elif shipping_dict['substatus'] == 'ready_for_pickup' or shipping_dict['substatus'] == 'printed':
-                order_status = 'ready_to_ship'
-
-
-
-            #------ CREATE ORDER ------
-            processing_order, new_order = order.objects.get_or_create(
-                order_id = str(order_id),
-                defaults= {
-                    'marketplace': ml_marketplace,
-                    'shipping_id': str(shipping_id),
-                    'order_type': logistic_type,
-                    'client_nickname': client_nickname,
-                    'status': order_status,
-                    'creation_date_time': created_date_time,
-                    'estimated_pickup_time': estimated_dict['expected_date'],
-                }
-            )
-            
-            if new_order:
-                for order_item in order_data['order_items']:
-                    order_product.objects.create(
-                        order=processing_order,
-                        sku_seller=order_item['item'].get('seller_sku', ''),
-                        sku_marketplace=order_item['item']['id'],
-                        quantity=order_item['quantity'],
-                    )
-
-            #------ UPDATE EXISTING ORDER IF NECESSARY-----
-            if not new_order:
-                
-                #SI ES QUE ESTA ORDEN CORRESPONDE A UN PACK
-                if order_data['pack_id'] != 'null':
-
-                    for order_item in order_data['order_items']:
-                        try: 
-                            order_product.objects.get(order=processing_order, sku_marketplace=order_item['item']['id'])
-
-                        except:
-                            order_product.objects.create(
-                                order=processing_order,
-                                sku_seller=order_item['item'].get('seller_sku', ''),
-                                sku_marketplace=order_item['item']['id'],
-                                quantity=order_item['quantity'],
-                            )
-                
-                if processing_order.status != order_status:
-                    processing_order.status = order_status
-                    processing_order.save()
-            
-            valid_orders_ids.add(str(order_id))  #registra cada ID
 
         offset_value += 51 #El recurso "Buscar Ordenes" de mercado libre tiene un límite de 51 items, es por esto que se le tiene que sumar al offset y llamar al recurso denuevo si se requieren más órdenes aparte de las primeras 51.
 
         orders_response = search_orders(offset_value)
+        if orders_response.status_code != 200:
+            create_api_error(orders_response)
+            return
         orders_dict = json.loads(orders_response.text)
 
-        if not orders_dict['results']:
+        if not orders_dict['results']: #Si el recurso 'Buscar Órdenes' de la API de mercado libre entrego una lista de órdenes vacía.
             break
 
-    order.objects.filter(marketplace=ml_marketplace).exclude(order_id__in=valid_orders_ids).delete() #Finalmente, se eliminan la ordenes dentro del sistema que no entrego el recurso de la api de mercado libre "buscar ordenes".
+    order.objects.filter(marketplace=marketplace.objects.get(slug='mercado-libre')).exclude(order_id__in=valid_orders_ids).delete() #Finalmente, se eliminan las ordenes dentro del sistema que no entrego el recurso de la api de mercado libre "buscar ordenes".
 
     
 def print_ml_orders(organized_ml_orders):
@@ -283,5 +400,4 @@ def print_ml_orders(organized_ml_orders):
 
     #[1:-1] --> Finalmente, se quitarán los corchetes de la lista. Con esto, los shippings ids tendrán el formato para ser aceptado por el recurso de impresión de etiquetas de API de ML.
 
-    get_shipmnet_label(shipping_ids_string)
-    update_today_ml_orders()
+    get_shipment_label(shipping_ids_string)
