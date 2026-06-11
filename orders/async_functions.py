@@ -26,7 +26,6 @@ def inspect_logistic_type(shipping_dict):
         logistic_type = 'flex'
 
     else:
-        processing_order.delete()
         print('La orden no es colecta ni flex')
         print('')
         return False
@@ -38,6 +37,8 @@ def inspect_estimated_dispatch_time(shipping_id):
     estimated_response = get_max_dispatch_time(shipping_id)
     if estimated_response.status_code != 200:
         create_api_error(estimated_response)
+        print('Descartado por error en la api')
+        print('')
         return False
     estimated_dict = json.loads(estimated_response.text)
 
@@ -47,7 +48,9 @@ def inspect_estimated_dispatch_time(shipping_id):
         expected_dispatch_time = datetime.fromisoformat(estimated_dict['expected_date'].replace('Z', '+00:00')).date()
 
     except:
-        expected_dispatch_time = None
+        print('Descartado por no tener expected_dispatch_time')
+        print('')
+        return False
 
     return expected_dispatch_time
 
@@ -94,9 +97,16 @@ def process_order(order_data, order_type):
         shipping_id = order_data['shipping']['id']
 
     elif order_type == 'pack_order':
-        shipping_id = order_data['shipment']['id']
+        #Hay algunas ocasiones en donde el PACK nisiquiera tiene un key 'id' para el shipment definido, en su lugar, este se deja como un valor null --> "shipment":null
+        try:
+            shipping_id = order_data['shipment']['id']
+        
+        except:
+            shipping_id = None
 
-    if shipping_id == None:
+    print(shipping_id)
+
+    if shipping_id is None:
         processing_order.delete()
         print('La orden no tiene shipping_id')
         print('')
@@ -174,6 +184,7 @@ def process_order(order_data, order_type):
     
     logistic_type = inspect_logistic_type(shipping_dict)
     if not logistic_type:
+        processing_order.delete()
         return
 
 
@@ -189,8 +200,9 @@ def process_order(order_data, order_type):
 
     #VER LA FECHA DE DESPACHO ESTIMADA DE LA ORDEN. SI NO ES PARA HOY O UNA FECHA ANTERIOR (Orden atrasada), LA ORDEN SE DESCARTA.
     expected_dispatch_time = inspect_estimated_dispatch_time(shipping_id)
-    #if not expected_dispatch_time:
-    #    return
+    if not expected_dispatch_time:
+        processing_order.delete()
+        return
     
 
     #LA DATA DEL PACK NO TIENE EL NICKNAME DEL CLIENTE POR DEFECTO, ASÍ QUE SE OBTIENE VÍA API.
