@@ -1,16 +1,29 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Min #Min() function is used to find the minimun value of a particular field
-from .models import order, marketplace
+from .models import order, marketplace, orders_group
 from django_q.tasks import async_task
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from datetime import date
 from django.views.decorators.http import require_POST #The decorators in django.views.decorators.http can be used to restrict access to views based on the request method. These decorators will return a django.http.HttpResponseNotAllowed if the conditions are not met. Para este caso solo usaremos de las requests de tipo POST.
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import json
 
 
 # Create your views here.
+def scanned_order_label(request, shipping_id):
+    if request.method == "POST":
+        try:
+            order_instance = order.objects.get(shipping_id=shipping_id)
+            #return JsonResponse({'order_id': order.order_id})
+        except order_instance.DoesNotExist:
+            return JsonResponse({'error': 'Orden no encontrada'}, status=404)
+
+        else:
+            order_instance.status = 'Escaneando'
+            order_instance.save()
+            return JsonResponse({'order_id': order_instance.order_id})
+
 @csrf_exempt 
 @require_POST #Decorator to require that a view only accepts the POST method.
 def ml_webhook(request): #Este view recibe las notificaciones de mercado libre, para luego ser procesados asincrónicamente.
@@ -27,7 +40,6 @@ def ml_webhook(request): #Este view recibe las notificaciones de mercado libre, 
 
 
 
-
 def orders(request, slug):
     marketplace_instance = marketplace.objects.get(slug=slug)
     today = timezone.now()
@@ -35,10 +47,10 @@ def orders(request, slug):
     print(today)
 
     #Estos son los contadores totales para la ordenes de mercado libre, se van a mostrar en el template.
-    collect_ready_to_print_total = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='collect', status='ready_to_print').count()
-    collect_ready_to_ship_total = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='collect', status='ready_to_ship').count()
-    flex_ready_to_print_total = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='flex', status='ready_to_print').count()
-    flex_ready_to_ship_total = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='flex', status='ready_to_ship').count()
+    collect_ready_to_print = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='collect', status='ready_to_print')
+    collect_ready_to_ship = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='collect', status='ready_to_ship')
+    flex_ready_to_print = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='flex', status='ready_to_print')
+    flex_ready_to_ship = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='flex', status='ready_to_ship')
 
 
     #En esta lista, se va a almacenar diccionarios con la data necesaria para renderizar las ordenes de cada tipo/status de mercado libre de hoy. Cada diccionario de la lista representa un grupo de data, en este caso hay un diccionario para colecta y otro para flex. Independiente del diccionario, todos usan la misma estructura html, esto se hace esencialmente para evitar escribir html redundante.
@@ -48,35 +60,35 @@ def orders(request, slug):
     orders_queries_dict = []
     #El diccionario parte vacío, solo se agregan elementos si es que los queries de ordenes existen. Esto se hace para solo renderizar el contenido disponible (las queries que tienen objetos 'order') en el template.
     
-    if collect_ready_to_print_total > 0:
+    if collect_ready_to_print.count() > 0:
         orders_queries_dict.append(
             {
                 'div_id': 'ml_collect_orders_print',
-                'orders_query': order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='collect', status='ready_to_print').order_by('-creation_date_time'),
+                'orders_query': collect_ready_to_print.order_by('-creation_date_time'),
             },
         )
 
-    if collect_ready_to_ship_total > 0:
+    if collect_ready_to_ship.count() > 0:
         orders_queries_dict.append(
             {
                 'div_id': 'ml_collect_orders_ship',
-                'orders_query': order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='collect', status='ready_to_ship').order_by('-creation_date_time'),
+                'orders_query': collect_ready_to_ship.order_by('-creation_date_time'),
             },
         )
 
-    if flex_ready_to_print_total > 0:
+    if flex_ready_to_print.count() > 0:
         orders_queries_dict.append(
             {
                 'div_id': 'ml_flex_orders_print',
-                'orders_query': order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='flex', status='ready_to_print').order_by('-creation_date_time'),
+                'orders_query': flex_ready_to_print.order_by('-creation_date_time'),
             },
         )
 
-    if flex_ready_to_ship_total > 0:
+    if flex_ready_to_ship.count() > 0:
         orders_queries_dict.append(
             {
                 'div_id': 'ml_flex_orders_ship',
-                'orders_query': order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='flex', status='ready_to_ship').order_by('-creation_date_time'),
+                'orders_query': flex_ready_to_ship.order_by('-creation_date_time'),
             },
         )
 
@@ -90,12 +102,7 @@ def orders(request, slug):
     # El nombre del botón para activar la solicitud post correspondiente. Hay un botón para colecta y otro para flex.
 
     #Esto contendrá las órdenes organizadas por SKU para colecta que necesitan imprimirse.
-    organized_ml_collect = order.objects.filter(
-        estimated_pickup_time__lte=today,
-        marketplace=marketplace_instance,
-        logistic_type='collect',
-        status='ready_to_print'
-    ).annotate(sku=Min('order_product__sku_seller')).order_by('sku')
+    organized_ml_collect = collect_ready_to_print.annotate(sku=Min('order_product__sku_seller')).order_by('sku')
 
     if organized_ml_collect.exists():
         organized_orders_dict.append({
@@ -105,12 +112,7 @@ def orders(request, slug):
         })
 
     #Esto contendrá las órdenes organizadas por SKU para flex que necesitan imprimirse.
-    organized_ml_flex = order.objects.filter(
-        estimated_pickup_time__lte=today,
-        marketplace=marketplace_instance,
-        logistic_type='flex',
-        status='ready_to_print'
-    ).annotate(sku=Min('order_product__sku_seller')).order_by('sku')
+    organized_ml_flex = flex_ready_to_print.annotate(sku=Min('order_product__sku_seller')).order_by('sku')
 
     if organized_ml_flex.exists():
         organized_orders_dict.append({
@@ -137,14 +139,42 @@ def orders(request, slug):
 
         async_task(f"orders.async_functions.print_ml_orders", organized_ml_flex)
 
+
+    if request.method == 'POST' and 'collect_prepare_btn' in request.POST:
+        group = orders_group.objects.create(marketplace=marketplace_instance)
+        collect_ready_to_ship.update(orders_group=group, status='preparing')
+
+        return redirect('orders:order_group', id=group.id)
+
+
+    if request.method == 'POST' and 'flex_prepare_btn' in request.POST:
+        group = orders_group.objects.create(marketplace=marketplace_instance)
+        flex_ready_to_ship.update(orders_group=group, status='preparing')
+
+        return redirect('orders:order_group', id=group.id)
+
     context = {
         'marketplace_instance': marketplace_instance,
         'orders_queries_dict': orders_queries_dict,
-        'collect_ready_to_print_total': collect_ready_to_print_total,
-        'collect_ready_to_ship_total': collect_ready_to_ship_total,
-        'flex_ready_to_print_total': flex_ready_to_print_total,
-        'flex_ready_to_ship_total': flex_ready_to_ship_total,
+        'collect_ready_to_print': collect_ready_to_print,
+        'collect_ready_to_ship': collect_ready_to_ship,
+        'flex_ready_to_print': flex_ready_to_print,
+        'flex_ready_to_ship': flex_ready_to_ship,
         'organized_orders_dict': organized_orders_dict,
     }
 
     return render(request, 'orders/orders.html', context)
+
+def order_group(request, id):
+    order_group_instance = get_object_or_404(orders_group, id=id)
+    group_orders = order.objects.filter(orders_group=order_group_instance)
+
+    context = {
+        'order_group_instance': order_group_instance,
+        'group_orders': group_orders,
+    }
+
+    if request.headers.get('HX-Request'):
+        return render(request, 'orders/partials/orders_from_group.html', context)
+
+    return render(request, 'orders/order_group.html', context)

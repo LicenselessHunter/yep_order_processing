@@ -3,20 +3,37 @@
 {% block title %}Órdenes de {{marketplace_instance}}{% endblock %}
 
 
-{% block supbar_btns %}
+{% block header_btns %}
 
 <form method="post">
     {% csrf_token %}
-    <button type="submit" name="update_today_orders">Actualizar órdenes</button>
+    <button type="submit" name="update_today_orders">Actualizar</button>
 </form>
 
-{% if collect_ready_to_print_total != 0 %}
-    <button id="collect_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir órdenes</button>
+{% if collect_ready_to_print.count != 0 %}
+    <button id="collect_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir</button>
 {% endif %}
 
-{% if flex_ready_to_print_total != 0 %}
-    <button id="flex_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir órdenes</button>
+{% if flex_ready_to_print.count != 0 %}
+    <button id="flex_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir</button>
 {% endif %}
+
+
+
+{% if collect_ready_to_ship.count != 0 %}
+    <form method="POST">   
+        {% csrf_token %}
+        <button id="collect_prepare_btn" class="prepare_btn" type="submit" name="collect_prepare_btn" style="display: none;">Preparar</button>
+    </form>
+{% endif %}
+
+{% if flex_ready_to_ship.count != 0 %}
+    <form method="POST">
+        {% csrf_token %}
+        <button id="flex_prepare_btn" class="prepare_btn" type="submit" name="flex_prepare_btn" style="display: none;">Preparar</button>
+    </form> 
+{% endif %}
+
 
 {% endblock %}
 
@@ -28,32 +45,32 @@
     <div id="ml_collect_totals" class="order_totals">
         <h3>Colecta</h3>
 
-        {% if collect_ready_to_print_total != 0 %}
-            <p id="toggle_collect_print">Etiquetas por imprimir <span>{{ collect_ready_to_print_total }}</span></p>
+        {% if collect_ready_to_print.count != 0 %}
+            <p id="toggle_collect_print">Etiquetas por imprimir <span>{{ collect_ready_to_print.count }}</span></p>
         {% else %}
-            <p>Etiquetas por imprimir <span>{{ collect_ready_to_print_total }}</span></p>
+            <p>Etiquetas por imprimir <span>{{ collect_ready_to_print.count }}</span></p>
         {% endif %}
 
-        {% if collect_ready_to_ship_total != 0 %}
-            <p id="toggle_collect_ship">Pedidos listos para despacho <span>{{ collect_ready_to_ship_total }}</span></p>
+        {% if collect_ready_to_ship.count != 0 %}
+            <p id="toggle_collect_ship">Pedidos listos para despacho <span>{{ collect_ready_to_ship.count }}</span></p>
         {% else %}
-            <p>Pedidos listos para despacho <span>{{ collect_ready_to_ship_total }}</span></p>
+            <p>Pedidos listos para despacho <span>{{ collect_ready_to_ship.count }}</span></p>
         {% endif %}
 
     </div>
 
     <div id="ml_flex_totals" class="order_totals">
         <h3>Flex</h3>
-        {% if flex_ready_to_print_total != 0 %}
-            <p id="toggle_flex_print">Etiquetas por imprimir <span>{{ flex_ready_to_print_total }}</span></p>
+        {% if flex_ready_to_print.count != 0 %}
+            <p id="toggle_flex_print">Etiquetas por imprimir <span>{{ flex_ready_to_print.count }}</span></p>
         {% else %}
-            <p>Etiquetas por imprimir <span>{{ flex_ready_to_print_total }}</span></p>
+            <p>Etiquetas por imprimir <span>{{ flex_ready_to_print.count }}</span></p>
         {% endif %}
 
-        {% if flex_ready_to_ship_total != 0 %}
-            <p id="toggle_flex_ship">Pedidos listos para despacho <span>{{ flex_ready_to_ship_total }}</span></p>
+        {% if flex_ready_to_ship.count != 0 %}
+            <p id="toggle_flex_ship">Pedidos listos para despacho <span>{{ flex_ready_to_ship.count }}</span></p>
         {% else %}
-            <p>Pedidos listos para despacho <span>{{ flex_ready_to_ship_total }}</span></p>
+            <p>Pedidos listos para despacho <span>{{ flex_ready_to_ship.count }}</span></p>
         {% endif %}
     
     </div>
@@ -89,11 +106,11 @@
 
 
 {% block modal %}
-<!--  -->
+
 {% for section in organized_orders_dict %}
     <div id="{{ section.div_id }}" class="modal">
 
-        <div class="modal-content">
+        <div class="modal-content" style="margin-left: auto; margin-right: auto; margin-top: 4em; padding: 20px; border: 1px solid #888; width: 45%; background-color: rgb(88, 84, 84); max-height: calc(100vh - 210px); overflow-y: auto;">
             <form method="POST">
             {% csrf_token %}
                 <h2>Estás a punto de imprimir las siguientes {{ section.orders_query.count }} órdenes</h2>

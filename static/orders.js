@@ -2,6 +2,7 @@ const ordersTitle = document.querySelector('.orders_title');
 
 const modals = document.querySelectorAll('.modal');
 const print_bts = document.querySelectorAll('.print_btn_modal');
+const prepare_bts = document.querySelectorAll('.prepare_btn');
 
 
 print_bts.forEach(btn => {
@@ -63,6 +64,12 @@ function activateToggle(active) {
     });
   }
 
+  if (prepare_bts.length != 0) {
+    prepare_bts.forEach(prepare_btn => {
+      prepare_btn.style.display = 'none';
+    });
+  }
+
 
   toggles.forEach((toggle) => {
 
@@ -93,6 +100,14 @@ function activateToggle(active) {
           document.getElementById('collect_print_btn_modal').style.display = 'inline-block';
         } else if(active.btn == document.getElementById('toggle_flex_print')) {
           document.getElementById('flex_print_btn_modal').style.display = 'inline-block';
+        }
+      }
+
+      if (prepare_bts.length != 0) {
+        if (active.btn == document.getElementById('toggle_collect_ship')){
+          document.getElementById('collect_prepare_btn').style.display = 'inline-block';
+        } else if(active.btn == document.getElementById('toggle_flex_ship')) {
+          document.getElementById('flex_prepare_btn').style.display = 'inline-block';
         }
       }
       

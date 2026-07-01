@@ -1,0 +1,29 @@
+{% for order in group_orders %}
+    <div class = "order-from-group-container" data-order-id="{{ order.order_id }}">
+        <ul class = "title-from-order-in-group">
+            <li>{{order.order_id}}</li>
+            {% if order.status == 'preparing' %}
+                <li class = "order-preparing-status">Preparando</li>
+            {% else %}
+                <li>{{order.status}}</li>
+            {% endif %}
+        </ul>
+
+        <div class="products-from-order-in-group-container">
+            <div class = "products-from-order-in-group">
+                <p class="product-cell-header">Producto</p>
+                <p class="product-cell-header">Unidades</p>
+                {% for product in order.order_product_set.all %}
+
+                    <div class="product-cell-data">
+                        <p>{{ product.sku_seller }}</p>
+                        <p>Nombre del producto</p>
+                    </div>
+                    <p id = "product-counter-cell" class="product-cell-data">0 / {{ product.quantity }}</p>
+
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+{% endfor %}

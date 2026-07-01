@@ -3,35 +3,41 @@ button {
 }
 
 /*---- supbar ----*/
-#supbar {
-    position: fixed; 
-    width: 100%; 
-    background-color: black; 
-    height: 2em; 
-    top: 0; 
-    left: 0; 
+.header-btn-container {
     display: flex;
-    gap: 10px;
-    align-items: center; 
-    justify-content: flex-end;
-    z-index: 1;
+    position: absolute;
+    right: 5rem;
+    gap: 0.5rem;
 }
 
-#supbar button {
-    position: relative; 
-    right: 15em;
-}
 
 #print_button {
     display: none;
 }
 
+/*---- header ----*/
+header {
+    position: fixed; /*The element is removed from the normal document flow, and no space is created for the element in the page layout. The element is positioned relative to its initial containing block, which is the viewport in the case of visual media.*/
+    background-color: black;
+    left: 0;
+    top: 0;
+    right: 0;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#nav-open-btn {
+    color: white;
+    cursor: pointer;
+    font-style: normal;
+    font-size: 1.5rem;
+}
 
 
-#showcase {
-    margin-left: 8em;
-    margin-top: 4em;
-    z-index: -1;
+main {
+    margin-top: 6rem;
 }
 
 .order_totals_container {
@@ -57,6 +63,73 @@ button {
 }
 
 
+/*---- nav css ----*/
+nav {
+    display: none;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    padding: 4em 1em 1em 1em;
+    font-size: 1.4rem;
+    /*inset: 0 80% 0 0;*/
+    /*right: 80%;*/
+    /*max-width: 8rem;*/
+    position: fixed;
+    color: white;
+    background-color: rgb(29, 29, 29);
+}
+
+nav ul {
+    padding: 0.5rem;
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+}
+
+nav a {
+    color: white;
+    display: block;
+    width: 100%; /* Se deja el width en 100% para que <a> abaque todos el container padre de su <li>. Esto permite que el espacio de entero del <li> sea clickeable para ir al hipervínculo del <a>*/
+    text-decoration: none;
+    padding-inline: 0.6rem;
+    padding-block: 0.5rem;
+}
+
+
+nav li:hover {
+    background-color: rgb(69, 69, 69);
+}
+
+
+#nav-close-btn {
+    color: white;
+    cursor: pointer;
+    font-style: normal;
+    top: 1rem;
+    background-color: rgba(255, 0, 0, 0);
+    position: absolute;
+}
+
+@media (min-width: 40em){
+    nav {
+        top: 2.7rem;
+        display: block; 
+        font-size: 1.2rem; 
+        padding: 1em;
+    }
+
+    #nav-open-btn{
+        display: none;
+    }
+
+    #nav-close-btn {
+        display: none;
+    }
+
+    main {
+        margin-left: 14rem;
+    }
+}
 
 /*---- orders css ----*/
 .order_totals_container {
@@ -127,7 +200,7 @@ button {
 }
 
 .modal-content {
-    margin-left: auto;
+    /*margin-left: auto;
     margin-right: auto;
     max-height: calc(100vh - 210px);
     overflow-y: auto;
@@ -135,12 +208,20 @@ button {
     padding: 20px;
     border: 1px solid #888;
     width: 45%;
-    background-color: rgb(88, 84, 84);
+    background-color: rgb(88, 84, 84);*/
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    width: 70%;
 }
 
+/*
 .modal-content h2 {
     color: white;
 }
+*/
 
 .modal_print_table {
     text-align: center; 
@@ -165,3 +246,229 @@ button {
 .modal_print_table tbody {
     background-color: white;
 }
+
+#label-scan-modal .modal-content {
+    background-color: white;
+    gap: 1rem;
+} 
+
+/*
+#label-reader {
+    max-width: 25rem;
+}
+*/
+
+#label-reader video {
+    width: 100% !important;
+}
+
+
+
+/*------ create product form CSS ------*/
+
+
+.form-title {
+    background-color: black;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 1rem;
+    border: 0.25rem solid rgb(123, 118, 118);
+}
+
+#create-product-form {
+    display: grid;
+    gap: 3rem;
+    background-color: black;
+    color: white;
+    padding: 1rem;
+    border-radius: 1rem;
+    border: 0.25rem solid rgb(123, 118, 118);
+    align-items: start;
+}
+
+#generate-derivated-forms {
+    display: grid;
+    column-gap: 1rem;
+    grid-template-rows: auto auto;
+    grid-template-columns: 8fr 2fr;
+}
+
+#derivated-count-input {
+    grid-column-start: 1;
+    grid-row-start: 2;
+
+}
+
+#generate-derivated-btn {
+    grid-column-start: 2;
+    grid-row-start: 2;
+}
+
+#derivated-formset-container p {
+    display: grid;
+    column-gap: 1rem;
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: auto 1rem;
+}
+
+#derivated-formset-container p input{
+    grid-column-start: 1;
+    grid-row-start: 2;
+}
+
+.remove-derivated {
+    grid-column-start: 2;
+    grid-row-start: 2;
+}
+
+#create-product-form input{
+    width: 100%;
+}
+
+
+.confirm-creation-btn {
+    justify-self: center;
+}
+
+@media (min-width: 40em){
+
+    #create-product-form {
+        grid-template-columns: 1fr 1fr;
+        gap: 5rem;
+    }
+
+    .confirm-creation-btn {
+        grid-column-end: span 2; 
+    }
+}
+
+/*
+#create-product-form {
+    display: grid;
+    gap: 0.2rem;
+}
+
+#create-product-form p {
+    display: flex;
+    flex-direction: column;
+    
+}
+
+#create-product-form input{
+    width: 100%;
+}
+
+#create-derivated-skus {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1em;
+}
+
+
+
+#create-product-form button {
+    justify-self: center;
+}
+
+#derivated-formset-container p{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1em;
+}
+*/
+
+
+
+
+/*---- orders group css ----*/
+
+#group-orders-cotainer {
+    display: flex; 
+    flex-direction: column; 
+    gap: 3rem; 
+    max-width: 60rem;
+}
+
+.order-from-group-container {
+    display: flex; 
+    flex-direction: column; 
+    gap: 0.2rem;
+}
+
+.title-from-order-in-group { /*Esto corresponde al elemento que tiene el id de orden y sus status*/
+    display: flex; 
+    background-color: black; 
+    color: white; 
+    justify-content: space-between; 
+    align-items: center; 
+    list-style-type: none; 
+    padding: 0.5rem; 
+    margin: 0; 
+    border: 0.15rem solid rgb(161, 156, 156);
+}
+
+.order-preparing-status {
+    color: #ecd908;
+}
+
+.products-from-order-in-group-container {
+    background-color: black; 
+    padding: 1rem; 
+    border: 0.15rem solid rgb(161, 156, 156);
+}
+
+.products-from-order-in-group {
+   display: grid;
+   /*fr --> A flexible length which describes a share of the available space in the grid container.*/
+   grid-template-columns: 2fr 1fr; /*Aquí se definen 2 columnas para el grid, 2fr 1fr dice que las dos columnas va a ocupar el width del grid container en proporción de 2:1, en este caso, dentro del width del container de class "products-from-order-in-group" la columna que contiene el sku y el nombre del producto ocupará el doble de espacio disponible que la columna  que contiene el contador*/
+   background-color: rgb(161, 156, 156);
+   gap: 0.15rem;
+   padding: 0.15rem;
+}
+
+.products-from-order-in-group p {
+    margin: 0; /*Por defecto los <p> tag tienen margin, aquí se los quito*/
+}
+
+#product-counter-cell {
+    text-align: center;
+    font-size: 1.5rem;
+}
+
+.product-cell-header, .product-cell-data {
+    padding-block: 0.3rem;
+    padding-inline: 0.2rem;
+}
+
+.product-cell-header {
+    color: white;
+    background-color: black;
+    text-align: center;
+}
+
+.product-cell-data {
+    background-color: white;
+}
+
+/*
+@media (min-width: 40em){
+    html {
+        font-size: calc(0.1rem + 1.0vw);
+    }    
+}
+*/
+
+/*
+#create-product-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+#create-product-form button{
+    width: fit-content;
+    min-width: 4rem;
+}
+*/

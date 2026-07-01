@@ -1,0 +1,67 @@
+{% extends 'global.html' %}
+{% load static %} <!--Módulo para static files. The load static tag does not load static files. It’s purpose is to allow you to use the static tag in your template.-->
+{% block title %}Grupo de orden {{order_group_instance.id}}{% endblock %}
+
+{% block header_btns %}
+    <button id="activate-label-scan-btn">Escanear</button>
+{% endblock %}
+
+{% block content %}
+
+<h1>Preparación de Pedidos</h1>
+
+<!--
+<div id = "group-orders-cotainer" hx-get="{% url 'orders:order_group' order_group_instance.id %}" hx-trigger="every 5s">
+    {% include 'orders/partials/orders_from_group.html' %}
+</div>
+-->
+
+<div id = "group-orders-cotainer">
+    {% for order in group_orders %}
+        <div class = "order-from-group-container" data-order-id="{{ order.order_id }}">
+            <ul class = "title-from-order-in-group">
+                <li>{{order.order_id}}</li>
+                {% if order.status == 'preparing' %}
+                    <li class = "order-preparing-status">Preparando</li>
+                {% else %}
+                    <li>{{order.status}}</li>
+                {% endif %}
+            </ul>
+
+            <div class="products-from-order-in-group-container">
+                <div class = "products-from-order-in-group">
+                    <p class="product-cell-header">Producto</p>
+                    <p class="product-cell-header">Unidades</p>
+                    {% for product in order.order_product_set.all %}
+
+                        <div class="product-cell-data">
+                            <p>{{ product.sku_seller }}</p>
+                            <p>Nombre del producto</p>
+                        </div>
+                        <p id = "product-counter-cell" class="product-cell-data">0 / {{ product.quantity }}</p>
+
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block modal %}
+    <div id="label-scan-modal" class="modal">
+
+        <div class="modal-content">
+            <h3>Escanear etiqueta de envío</h3>
+            <div id="label-reader"></div>
+            <button id = "cancel-label-scan-btn">Cancelar</button>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="{% static 'order_group.js' %}"></script>
+{% endblock %}

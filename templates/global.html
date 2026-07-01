@@ -12,18 +12,44 @@
 
 <body>
 
-	<section id = "supbar">
-        {% block supbar_btns %}{% endblock %}
-    </section>
+	<header>
+        <i id="nav-open-btn">&#9776;</i>
+        <div class = "header-btn-container">
+            {% block header_btns %}{% endblock %}
+        </div>
+        <i style="color: white; cursor: pointer; font-style: normal; font-size: 1.5rem;">&#xf08b;</i>
+    </header>
 
-    <section id = "showcase">
+	<nav>
+        <i id="nav-close-btn">&#10006;</i>
+        <ul>
+           <li>
+                <a>Inicio</a>
+           </li>
+
+           <li>
+                <a>Usuarios</a>
+           </li>
+
+           <li>
+                <a href="{% url 'products:products_catalogue' %}">Productos</a>
+           </li>
+
+           <li>
+                <a href="{% url 'orders:orders' 'mercado-libre'%}">Mercado Libre</a>
+           </li>
+        </ul>
+    </nav>
+
+    <main>
         {% block content %}
         {% endblock %}
 
-    </section>
+    </main>
 
     {% block modal %}{% endblock %}
-
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous"></script>
+    <script src="{% static 'global.js' %}"></script>
     {% block page_scripts %}
     {% endblock %}
 </body>

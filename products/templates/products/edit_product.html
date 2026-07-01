@@ -1,0 +1,67 @@
+{% extends 'global.html' %}
+{% load static %}
+{% block title %}Editar Producto{% endblock %}
+
+{% block content %}
+<h1>Edición de producto</h1>
+
+<form id="edit-product-form" method="post">
+    {% csrf_token %}
+    {% for field in form %}
+        {% if field.name == 'ean' %}
+            <div style="display: flex; align-items: center; gap: 8px;">
+                {{ field.label_tag }}
+                {{ field }}
+                <button id="activate-scan" type="button">Escanear</button>
+            </div>
+        {% else %}
+            <p>{{ field.label_tag }}{{ field }}</p>
+        {% endif %}
+    {% endfor %}
+    <div id="reader"></div>
+    <button id="cancel-scan" type="button" style="display: none;">Cancelar</button>
+    
+    {% if existing_derivated_formset.total_form_count != 0 %}
+        <h3>SKU/s derivado/s</h3>
+        {{ existing_derivated_formset.management_form }}
+        <div id="existing-derivated-container">
+            {{ existing_derivated_formset }}
+            
+        </div>
+    {% endif %}
+
+
+    <h3>Crear nuevo/s SKU/s derivado/s</h3>
+    <p id="create-derivated-skus">
+        Generar <input id="derivated-count-input" type="number" min="0" max="10"> sku/s derivado/s
+        <button type="button" id="generate-derivated-btn">Generar</button>
+    </p>
+    {{ formset.management_form }} 
+    
+    <div id="derivated-formset-container">
+    </div>
+
+    {% for form in formset %}
+        {% if form.errors %}
+            <div>
+                <strong>SKU {{ form.sku.value }}</strong>
+                <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    <button type="submit">Confirmar</button>
+</form>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="{% static 'edit_ean_product.js' %}"></script>
+<script src="{% static 'derivated_skus.js' %}"></script>
+{% endblock %}

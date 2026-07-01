@@ -32,6 +32,17 @@ class marketplace(models.Model):
         return self.marketplace_name
 
 
+class orders_group(models.Model):
+    GROUP_STATUS = [
+        ('in_progress', 'in_progress'),
+        ('processed', 'processed'),
+    ]
+
+    marketplace = models.ForeignKey(marketplace, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, blank=True, choices=GROUP_STATUS, default='in_progress')
+    creation_date_time = models.DateTimeField(auto_now_add=True)
+    processed_date_time = models.DateTimeField(null=True)
+
 class order(models.Model):
     LOGISTIC_TYPE_CHOICES = [
         ('collect', 'ML Colecta'),
@@ -41,9 +52,11 @@ class order(models.Model):
     ORDER_STATUS = [
         ('ready_to_print', 'ready_to_print'),
         ('ready_to_ship', 'ready_to_ship'),
+        ('preparing', 'Preparando'),
     ]
 
     marketplace = models.ForeignKey(marketplace, on_delete=models.CASCADE)
+    orders_group = models.ForeignKey(orders_group, on_delete=models.CASCADE, blank=True, null=True)
     order_id = models.CharField(max_length=100)
     shipping_id = models.CharField(max_length=100, blank=True)
     logistic_type = models.CharField(max_length=20, blank=True, choices=LOGISTIC_TYPE_CHOICES)
@@ -70,10 +83,10 @@ class order_product(models.Model):
     sku_seller = models.CharField(max_length=100, blank=True)
     sku_marketplace = models.CharField(max_length=100, blank=True)
     quantity = models.IntegerField(default=1)
+    creation_date_time = models.DateTimeField(null=True)
 
     def __str__(self):
         return f"{self.order} - {self.sku_seller} (x{self.quantity})"
-
 
 
 class api_error(models.Model):

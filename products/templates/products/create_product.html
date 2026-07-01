@@ -1,0 +1,96 @@
+{% extends 'global.html' %}
+{% load static %} <!--Módulo para static files. The load static tag does not load static files. It’s purpose is to allow you to use the static tag in your template.-->
+{% block title %}Crear Producto{% endblock %}
+
+
+{% block content %}
+
+<h1 class = "form-title">Creación de producto</h1>
+    
+<form id="create-product-form" method="post">
+    <div class = "base-product-form">
+        {% csrf_token %}
+        {% for field in form %}
+            {% if field.name == 'ean' %}
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    <button id="activate-scan" type="button">Escanear</button>
+                    
+                </div>
+            {% else %}
+                <p>{{ field.label_tag }}{{ field }}</p>
+            {% endif %}
+            {% if field.errors %}
+            
+            <ul>
+            {% for error in field.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+            </ul>
+
+            {% endif %}
+        {% endfor %}
+        <div id="reader"></div>
+        <button id="cancel-scan" type="button" style="display: none;">Cancelar</button>
+
+    </div>
+    
+    <div class="derivated-skus-form">
+        <h3>SKUs derivados</h3>
+
+        <div id="generate-derivated-forms">
+            <p>Generar formularios</p>
+            <input id="derivated-count-input" type="number" min="0" max="10">
+            <button type="button" id="generate-derivated-btn">Generar</button>
+        </div>
+        {{ formset.management_form }} 
+        
+        <div id="derivated-formset-container">
+        </div>
+
+        {{ formset.non_form_errors }}
+
+        {% for form in formset %}
+            {% if form.errors %}
+                <div>
+                    <strong>SKU {{ form.sku.value }}</strong>
+                    <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <button type="submit" class="confirm-creation-btn">Confirmar</button>
+</form>
+
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="{% static 'edit_ean_product.js' %}"></script>
+<script src="{% static 'derivated_skus.js' %}"></script>
+{% endblock %}
+
+<!--ManagementForm: This form is used by the formset to manage the collection of forms contained in the formset. It is used to keep track of how many form instances are being displayed. If you are adding new forms via JavaScript, you should increment the count fields in this form as well.-->
+
+<!--The management form is available as an attribute of the formset itself. When rendering a formset in a template, you can include all the management data by rendering {{ my_formset.management_form }} (substituting the name of your formset as appropriate).
+
+Este {{ formset.management_form }} renderizado se ve así:
+<input type="hidden" name="derivated-TOTAL_FORMS" value="0" id="id_derivated-TOTAL_FORMS">
+<input type="hidden" name="derivated-INITIAL_FORMS" value="0" id="id_derivated-INITIAL_FORMS">
+<input type="hidden" name="derivated-MIN_NUM_FORMS" value="0" id="id_derivated-MIN_NUM_FORMS">
+<input type="hidden" name="derivated-MAX_NUM_FORMS" value="1000" id="id_derivated-MAX_NUM_FORMS">
+
+form-TOTAL_FORMS: tracks the total number of forms in a formset
+form-INITIAL_FORMS: tracks the number of pre-existing forms (data already loaded from the database or initial data) submitted to the server
+form-MIN_NUM_FORMS: dictate the minimum number of valid forms required to prevent the formset from raising a validation error
+form-MAX_NUM_FORMS: limits the maximum number of forms a formset can instantiate or validate during a POST request
+--> 
