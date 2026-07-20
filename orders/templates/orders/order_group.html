@@ -1,6 +1,6 @@
 {% extends 'global.html' %}
 {% load static %} <!--Módulo para static files. The load static tag does not load static files. It’s purpose is to allow you to use the static tag in your template.-->
-{% block title %}Grupo de orden {{order_group_instance.id}}{% endblock %}
+{% block title %}Grupo de orden{% endblock %}
 
 {% block header_btns %}
     <button id="activate-label-scan-btn">Escanear</button>
@@ -10,43 +10,23 @@
 
 <h1>Preparación de Pedidos</h1>
 
-<!--
+<div id = 'order-group-general-information'>
+    {% include 'orders/partials/group_general_information.html' %}
+</div>
+
+{% if prepared_orders_count > 0 and order_group_instance.status == 'in_progress' %} 
+    <button id = "process-order-group-modalBtn" name="process-order-group">Procesar Grupo</button>
+{% endif %}
+
+
+<!--Aquí se está usando HTMX, Una biblioteca de JS que permite el uso de AJAX directamente en html. En este caso, esta biblioteca nos permite actualizar el front-end sin necesidad de 'refrescar' o del uso de JS adicional.
+hx-get: Will cause an element to issue a GET to the specified URL and swap the HTML into the DOM using a swap strategy.
+hx-trigger: Allows you to specify what triggers an AJAX request. En este caso, se va a hacer polling cada 5 segundos al view 'order_group'.--> 
 <div id = "group-orders-cotainer" hx-get="{% url 'orders:order_group' order_group_instance.id %}" hx-trigger="every 5s">
     {% include 'orders/partials/orders_from_group.html' %}
 </div>
--->
 
-<div id = "group-orders-cotainer">
-    {% for order in group_orders %}
-        <div class = "order-from-group-container" data-order-id="{{ order.order_id }}">
-            <ul class = "title-from-order-in-group">
-                <li>{{order.order_id}}</li>
-                {% if order.status == 'preparing' %}
-                    <li class = "order-preparing-status">Preparando</li>
-                {% else %}
-                    <li>{{order.status}}</li>
-                {% endif %}
-            </ul>
 
-            <div class="products-from-order-in-group-container">
-                <div class = "products-from-order-in-group">
-                    <p class="product-cell-header">Producto</p>
-                    <p class="product-cell-header">Unidades</p>
-                    {% for product in order.order_product_set.all %}
-
-                        <div class="product-cell-data">
-                            <p>{{ product.sku_seller }}</p>
-                            <p>Nombre del producto</p>
-                        </div>
-                        <p id = "product-counter-cell" class="product-cell-data">0 / {{ product.quantity }}</p>
-
-                    {% endfor %}
-                </div>
-            </div>
-
-        </div>
-    {% endfor %}
-</div>
 {% endblock %}
 
 {% block modal %}
@@ -59,9 +39,43 @@
         </div>
     </div>
 
+    <div id="label-scan-error-modal" class="modal">
+
+        <div class="modal-content">
+            <i id = "label-scan-error-sign">&#10060;</i>
+            <h3 id = "label-scan-error-header">Error</h3>
+            <p id="label-scan-error-text"></p>
+            <button id = "close-label-error-modal">Aceptar</button>
+        </div>
+    </div>
+
+    
+    <div id="process-order-group-modal" class="modal">
+
+        <div class="modal-content">
+            <div id = "updatable-group-modal-content">
+
+                {% include 'orders/partials/group_modal_content.html' %}
+                
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div style="display: flex; gap: 0.8rem;">
+                    <button type="submit" name="confirm-order-processing">Confirmar</button>
+                    <button id = "close-process-order-group-modal" type="button">Cancelar</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block page_scripts %}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="{% static 'order_group.js' %}"></script>
+{% if prepared_orders_count > 0 and order_group_instance.status == 'in_progress' %} 
+    <script src="{% static 'process_order_group.js' %}"></script>
+{% endif %} 
 {% endblock %}

@@ -1,0 +1,11 @@
+<p id="order-group-id" data-group-id="{{ order_group_instance.id }}"><b>Id de este grupo: </b>{{ order_group_instance.id }}</p>
+
+{% if order_group_instance.status == 'in_progress' %}
+    <p><b>Estado:</b> <span class = "group-order-inProgress-status">En progreso</span></p>
+
+{% elif order_group_instance.status == 'processed' %}
+    <p><b>Estado:</b> <span class = "group-order-processed-status">Procesado</span></p>
+
+{% endif %}
+
+<p><b>Órdenes preparadas: </b>{{ prepared_orders_count }} / {{ total_orders_count }}</p>

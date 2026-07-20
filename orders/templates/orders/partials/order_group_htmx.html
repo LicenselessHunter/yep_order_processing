@@ -1,0 +1,18 @@
+
+<!--Aquí se va a incluir el contenido html de las órdenes del grupo actualizado por htmx-->
+{% include 'orders/partials/orders_from_group.html' %}
+
+<!--Además de las órdenes, podemos usar el atributo hx-swap-oob para actualizar más elementos sin necesidad de hacer más solicitudes get. Para que esto sea posible, los elementos out of bound deben tener un 'id'-->
+
+<!-- The hx-swap-oob attribute allows you to specify that some content in a response should be swapped into the DOM somewhere other than the target, that is “Out of Band”. This allows you to piggyback updates to other element updates on a response. -->
+
+<!-- Estas actualizaciones "Out of Band" se hacen para actualizar el div con la información general del grupo (order-group-general-information) de pedido y actualizar el modal de procesamiento del grupo de pedidos (updatable-group-modal-content). -->
+
+<div id = "order-group-general-information" hx-swap-oob="true">
+    {% include 'orders/partials/group_general_information.html' %}
+</div>
+
+
+<div id = "updatable-group-modal-content" hx-swap-oob="true">
+    {% include 'orders/partials/group_modal_content.html' %}
+</div>

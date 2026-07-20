@@ -1,0 +1,12 @@
+{% if prepared_orders_count == total_orders_count %}
+    <h3>Atención</h3>
+    <p>Estás a punto de procesar este grupo de pedidos</p>
+
+{% else %}
+    <i id = "process-order-group-warning-sign">&#9888;</i>
+    <h3>Advertencia</h3>
+    <p id = "process-order-group-warning-msg">Estás a punto de procesar un grupo de pedidos parcialmente preparado</p>
+
+{% endif %}
+<p class="prepared-counter-title">Órdenes preparadas</p>
+<p>{{ prepared_orders_count }} / {{ total_orders_count }}</p>

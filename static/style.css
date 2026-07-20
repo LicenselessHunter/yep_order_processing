@@ -2,7 +2,7 @@ button {
     cursor: pointer;
 }
 
-/*---- supbar ----*/
+/*---- HEADER ----*/
 .header-btn-container {
     display: flex;
     position: absolute;
@@ -15,7 +15,7 @@ button {
     display: none;
 }
 
-/*---- header ----*/
+
 header {
     position: fixed; /*The element is removed from the normal document flow, and no space is created for the element in the page layout. The element is positioned relative to its initial containing block, which is the viewport in the case of visual media.*/
     background-color: black;
@@ -35,7 +35,50 @@ header {
     font-size: 1.5rem;
 }
 
+/*---- DJANGO MESSAGES ----*/
+#messages-container {
+    position: fixed;
+    left: 0;
+    top: 3rem;
+    right: 0;
+    margin: 0;
+    padding-left: 0;
+}
 
+#messages-container li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style: none;
+    padding-block: 0.2rem;
+    padding-inline: 0.4rem;
+}
+
+.message-close-btn {
+    font-style: normal;
+    cursor: pointer;
+}
+
+.success {
+    background-color: #aef3cf;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+@media (min-width: 40em){
+    #messages-container {
+        top: 2.70rem;
+        left: 11.7rem;
+    }
+}
+
+/*---- MAIN ----*/
 main {
     margin-top: 6rem;
 }
@@ -63,7 +106,7 @@ main {
 }
 
 
-/*---- nav css ----*/
+/*---- NAV ----*/
 nav {
     display: none;
     left: 0;
@@ -71,9 +114,6 @@ nav {
     bottom: 0;
     padding: 4em 1em 1em 1em;
     font-size: 1.4rem;
-    /*inset: 0 80% 0 0;*/
-    /*right: 80%;*/
-    /*max-width: 8rem;*/
     position: fixed;
     color: white;
     background-color: rgb(29, 29, 29);
@@ -89,7 +129,6 @@ nav ul {
 nav a {
     color: white;
     display: block;
-    width: 100%; /* Se deja el width en 100% para que <a> abaque todos el container padre de su <li>. Esto permite que el espacio de entero del <li> sea clickeable para ir al hipervínculo del <a>*/
     text-decoration: none;
     padding-inline: 0.6rem;
     padding-block: 0.5rem;
@@ -110,6 +149,24 @@ nav li:hover {
     position: absolute;
 }
 
+/* dropdown */
+.dropbtn {
+    border: none;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    position: absolute;
+    display: none;
+    background-color: black;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    white-space: nowrap;
+
+}
+
+
+
+
 @media (min-width: 40em){
     nav {
         top: 2.7rem;
@@ -129,6 +186,129 @@ nav li:hover {
     main {
         margin-left: 14rem;
     }
+}
+
+/*---- product_catalogue css ----*/
+.products-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.product-div {
+    background-color: black;
+    color: white;
+    display: grid;
+    padding: 1rem;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 1rem;
+    align-items: center;
+    border: 0.3rem solid rgb(161, 156, 156);
+    border-radius: 1rem;
+}
+
+.product-div p{
+    margin: 0;
+}
+
+.product-field {
+    color:rgb(143, 146, 148);
+}
+
+.product-data-sku {
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding-bottom: 0.3rem;
+}
+
+.product-data-name {
+    font-size: 0.7rem;
+}
+
+
+#product-stock-div {
+    text-align: center;
+    place-self: center;
+    grid-row-end: span 2;
+}
+
+
+.product-data-stock {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+/*product_catalogue dropdown*/
+
+.product-option-btn {
+    font-size: 2.5rem;
+    text-align: center;
+    grid-row-end: span 2;
+    place-self: center;
+    width: 3rem;
+    position: relative;
+    cursor: pointer;
+}
+
+.product-option-btn i{
+    font-style: normal;
+}
+
+.product-option-btn:hover {
+    background-color: rgb(58, 61, 63);
+    border-radius: 50%;
+}
+
+.product-dropdown-content {
+    position: absolute; 
+    font-size: 1rem;
+    padding: 0.3rem; 
+    right: 0; 
+    background-color: rgb(92, 90, 90); 
+    display: none; 
+    flex-direction: column; 
+    border-radius: 10%;
+    cursor: default;
+}
+
+.product-dropdown-content a {
+    cursor: pointer;
+    color: white;
+    text-decoration: none;
+    padding: 0.2rem;
+}
+
+.product-dropdown-content a:hover {
+    background-color: rgb(55, 54, 54); 
+}
+
+@media (min-width: 640px){
+    .product-div {
+        grid-template-columns: 3fr 2fr 2fr 1fr;
+    }
+
+    .product-data-sku {
+        font-size: 1.5rem;
+    }
+
+    .product-data-name {
+        font-size: 1rem;
+    }
+
+    #product-category-div {
+        grid-row-start: 1;
+        grid-column-start: 2;
+    }
+
+    .product-data-category {
+        font-size: 1.3rem;
+    }
+
+    .product-option-btn {
+        font-size: 2rem;
+        width: 2.5rem;
+    }
+
 }
 
 /*---- orders css ----*/
@@ -186,12 +366,12 @@ nav li:hover {
     border-bottom: 1px solid rgb(220, 220, 220);
 }
 
-/*---- global modal css ----*/
+/*---- GLOBAL MODAL CSS ----*/
 
 .modal {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    background-color: rgba(0, 0, 0, 0.748); /* Black w/ opacity */
     width: 100%;
     height: 100%;
     left: 0;
@@ -213,8 +393,8 @@ nav li:hover {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.5rem;
-    width: 70%;
+    padding: 0.8rem;
+    border-radius: 1rem;
 }
 
 /*
@@ -247,26 +427,8 @@ nav li:hover {
     background-color: white;
 }
 
-#label-scan-modal .modal-content {
-    background-color: white;
-    gap: 1rem;
-} 
 
-/*
-#label-reader {
-    max-width: 25rem;
-}
-*/
-
-#label-reader video {
-    width: 100% !important;
-}
-
-
-
-/*------ create product form CSS ------*/
-
-
+/*------ CREATE PRODUCT FORM ------*/
 .form-title {
     background-color: black;
     color: white;
@@ -275,7 +437,7 @@ nav li:hover {
     border: 0.25rem solid rgb(123, 118, 118);
 }
 
-#create-product-form {
+#product-form {
     display: grid;
     gap: 3rem;
     background-color: black;
@@ -321,23 +483,37 @@ nav li:hover {
     grid-row-start: 2;
 }
 
-#create-product-form input{
+#product-form input{
     width: 100%;
 }
 
 
-.confirm-creation-btn {
+.confirm-product-form-btn {
     justify-self: center;
+}
+
+
+/*modal con scanner*/
+
+#product-scanner-modal .modal-content {
+    background-color: white;
+    width: 70%;
+    gap: 1rem;
+} 
+
+
+#product-reader video {
+    width: 100% !important;
 }
 
 @media (min-width: 40em){
 
-    #create-product-form {
+    #product-form {
         grid-template-columns: 1fr 1fr;
         gap: 5rem;
     }
 
-    .confirm-creation-btn {
+    .confirm-product-form-btn {
         grid-column-end: span 2; 
     }
 }
@@ -380,6 +556,91 @@ nav li:hover {
 */
 
 
+/*---- group of orders css ----*/
+#group-of-orders-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/*
+.order-group-div {
+    background-color: black;
+    color: white;
+    padding: 0.5rem;
+    display: grid;
+    grid-template-rows: 1fr 3fr;
+}
+
+.order-group-div-firstRow {
+    display: flex; 
+    justify-content: space-between;
+}
+
+.order-group-div-secondRow {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.order-group-div p{
+    margin: 0;
+}
+
+.order-group-field {
+    font-style: italic;
+    color: rgb(143, 146, 148);
+}
+
+.order-group-count {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+}
+
+.order-group-count-data {
+    font-size: 1.5rem;
+}
+*/
+
+.order-group-detail-btn a {
+    text-decoration: none;
+}
+
+.group-order-inProgress-status {
+    color: #ff8000;
+    font-weight: bold;
+}
+
+.group-order-processed-status {
+    color: #2efb00;
+    font-weight: bold;
+}
+
+
+
+/*
+
+.order-group-table {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 1fr 2fr;
+    align-items: center;
+    list-style-type: none;
+    background-color: rgb(182, 188, 188);
+}
+
+.order-group-table > li {
+    padding: 0.3rem 0.2rem;
+}
+
+.order-group-header-cell {
+    background-color: black;
+    color: white;
+    align-self: stretch;
+}
+*/
+
 
 
 /*---- orders group css ----*/
@@ -389,6 +650,7 @@ nav li:hover {
     flex-direction: column; 
     gap: 3rem; 
     max-width: 60rem;
+    margin-top: 1rem;
 }
 
 .order-from-group-container {
@@ -409,8 +671,24 @@ nav li:hover {
     border: 0.15rem solid rgb(161, 156, 156);
 }
 
+.title-from-order-in-group li {
+    font-weight: bold;
+}
+
 .order-preparing-status {
-    color: #ecd908;
+    color: #ec8d08;
+}
+
+.order-prepared-status {
+    color: #2aec08;
+}
+
+.not-prepared-status {
+    color: rgb(239, 64, 64);
+}
+
+.partially_prepared-status {
+    color: rgb(234, 237, 8);
 }
 
 .products-from-order-in-group-container {
@@ -451,6 +729,104 @@ nav li:hover {
 .product-cell-data {
     background-color: white;
 }
+
+/*label-scan-modal*/
+#label-scan-modal .modal-content {
+    background-color: white;
+    width: 70%;
+    gap: 1rem;
+} 
+
+
+#label-reader video {
+    width: 100% !important;
+}
+
+/*label-scan-error-modal*/
+#label-scan-error-modal .modal-content {
+    background-color: white;
+}
+
+#label-scan-error-sign {
+    font-style: normal; 
+    font-size: 2rem;
+}
+
+#label-scan-error-header {
+    color: rgb(240, 65, 65);
+}
+
+#label-scan-error-text {
+    font-size: 1.2rem;
+    text-align: center;
+    max-width: 28ch;
+    margin-top: 0;
+}
+
+
+/*process-order-group-modal*/
+#process-order-group-modal .modal-content {
+    background-color: white;
+    width: 17rem;
+}
+
+#updatable-group-modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#process-order-group-warning-sign {
+    font-style: normal; 
+    font-size: 3rem; 
+    color: rgb(247, 150, 5);
+}
+
+#process-order-group-modal p {
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+#process-order-group-warning-msg {
+    max-width: 28ch;
+}
+
+.prepared-counter-title {
+    font-weight: bold; 
+    margin-bottom: 0;
+}
+
+
+
+/*---- prepare_order css ----*/
+
+/*ean-scan-error-modal*/
+#ean-scan-error-modal .modal-content {
+    background-color: white;
+}
+
+#ean-scan-error-sign {
+    font-style: normal; 
+    font-size: 2rem;    
+}
+
+#ean-scan-error-header {
+    color: rgb(240, 65, 65);
+}
+
+#ean-scan-error-modal p {
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+#ean-scan-error-text {
+    font-size: 1.2rem;
+    text-align: center;
+    max-width: 28ch;
+    margin-top: 0;
+}
+
+
 
 /*
 @media (min-width: 40em){

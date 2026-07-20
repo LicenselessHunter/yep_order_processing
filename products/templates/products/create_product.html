@@ -7,7 +7,7 @@
 
 <h1 class = "form-title">Creación de producto</h1>
     
-<form id="create-product-form" method="post">
+<form id="product-form" method="post">
     <div class = "base-product-form">
         {% csrf_token %}
         {% for field in form %}
@@ -15,7 +15,8 @@
                 <div style="display: flex; align-items: center; gap: 8px;">
                     {{ field.label_tag }}
                     {{ field }}
-                    <button id="activate-scan" type="button">Escanear</button>
+                    <button id="activate-product-scanner-btn" type="button">Escanear</button>
+                    <!--<button id="activate-scan" type="button">Escanear</button>-->
                     
                 </div>
             {% else %}
@@ -31,8 +32,6 @@
 
             {% endif %}
         {% endfor %}
-        <div id="reader"></div>
-        <button id="cancel-scan" type="button" style="display: none;">Cancelar</button>
 
     </div>
     
@@ -67,15 +66,27 @@
         {% endfor %}
     </div>
 
-    <button type="submit" class="confirm-creation-btn">Confirmar</button>
+    <button type="submit" class="confirm-product-form-btn">Confirmar</button>
 </form>
 
+
+{% block modal %}
+    <div id="product-scanner-modal" class="modal">
+
+        <div class="modal-content">
+            <h3>Escanear código de barra de producto</h3>
+            <div id="product-reader"></div>
+            <button id = "product-scanner-cancel-btn">Cancelar</button>
+        </div>
+    </div>
+
+{% endblock %}
 
 {% endblock %}
 
 {% block page_scripts %}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-<script src="{% static 'edit_ean_product.js' %}"></script>
+<script src="{% static 'ean_product_form.js' %}"></script>
 <script src="{% static 'derivated_skus.js' %}"></script>
 {% endblock %}
 

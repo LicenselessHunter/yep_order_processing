@@ -1,0 +1,89 @@
+{% extends 'global.html' %}
+{% load static %} <!--Módulo para static files. The load static tag does not load static files. It’s purpose is to allow you to use the static tag in your template.-->
+{% block title %}Grupos de órdenes de {{marketplace_instance}}{% endblock %}
+
+
+{% block content %}
+
+<h1>Grupos de órdenes de {{marketplace_instance}}</h1>
+
+<div id="group-of-orders-wrapper">
+    <!--
+    {% for order_group in groups_of_orders %}
+        <div class="order-group-div">
+            <div class = "order-group-div-firstRow">
+                <p><span class="order-group-field">id:</span> {{order_group.id}}</p>
+                {% if order_group.status == 'in_progress' %}
+                    <p class = "group-order-inProgress-status">En progreso</p>
+                {% endif %}
+            </div>
+
+            <div class = "order-group-div-secondRow">
+                <p class = order-group-count><span class="order-group-field">Órdenes:</span> <span class = order-group-count-data>{{order_group.prepared_count}}/{{order_group.order_set.count}}</span></p>
+                <p style="display: flex; flex-direction: column; align-items: center;"><span class="order-group-field">Tipo:</span> {{order_group.logistic_type}}</p>
+                <button class="order-group-detail-btn"><a href="{% url 'orders:order_group' order_group.id %}">Ver detalle</a></button>
+            </div>
+            
+        </div>
+    {% endfor %}
+    -->
+    
+    {% for order_group in groups_of_orders %}
+        <div style="display: grid; grid-template-rows: 1fr 2fr; background-color: rgb(222, 227, 227); max-width: 70rem; text-align: center; border: 1px solid rgb(161, 156, 156);">
+            <div class="order-group-headers" style="display: grid; grid-template-columns: 1fr repeat(4, 2fr); color: white; background-color: black; list-style-type: none; align-items: center; padding-inline: 0.3rem; justify-items: center;">
+                <li>id</li>
+                <li>Tipo logístico</li>
+                <li>Estado</li>
+                <li>Órdenes</li>
+                <li></li>
+            </div>
+ 
+            <div class="order-group-data" style="display: grid; grid-template-columns: 1fr repeat(4, 2fr); list-style-type: none; align-items: center; padding-inline: 0.3rem; justify-items: center;">
+                <li>{{order_group.id}}</li>
+                {% if order_group.logistic_type == 'collect' %}
+                    <li>Colecta</li>
+
+                {% elif order_group.logistic_type == 'flex' %}
+                    <li>Flex</li>
+                {% endif %}
+                
+                {% if order_group.status == 'in_progress' %}
+                    <li class = "group-order-inProgress-status">En progreso</li>
+                
+                {% elif order_group.status == 'processed' %}
+                    <li class = "group-order-processed-status">Procesado</li>
+                {% endif %}
+                <li>{{order_group.prepared_count}}/{{order_group.order_set.count}}</li>
+                <li><button class="order-group-detail-btn"><a href="{% url 'orders:order_group' order_group.id %}">Ingresar</a></button></li>
+            </div>
+        </div>
+    {% endfor %}
+
+    
+    <!--
+    {% for order_group in groups_of_orders %}
+        <div class="order-group-table">
+            <li class="order-group-header-cell">id</li>
+            <li class="order-group-header-cell">Tipo logístico</li>
+            <li class="order-group-header-cell">Estado</li>
+            <li class="order-group-header-cell">Órdenes</li>
+            <li class="order-group-header-cell"></li>
+
+            <li>{{order_group.id}}</li>
+            <li>{{order_group.logistic_type}}</li>
+            {% if order_group.status == 'in_progress' %}
+                <li class="group-order-inProgress-status">En progreso</li>
+            {% else %}
+                <li></li>
+            {% endif %}
+            <li>{{order_group.prepared_count}}/{{order_group.order_set.count}}</li>
+            <li><button class="order-group-detail-btn"><a href="{% url 'orders:order_group' order_group.id %}">Ver detalle</a></button></li>
+        </div>
+    {% endfor %}
+    -->
+
+
+</div>
+
+
+{% endblock %}

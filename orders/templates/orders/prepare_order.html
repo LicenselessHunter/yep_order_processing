@@ -1,0 +1,46 @@
+{% extends 'global.html' %}
+{% load static %} <!--Módulo para static files. The load static tag does not load static files. It’s purpose is to allow you to use the static tag in your template.-->
+{% block title %}Orden de grupo {{order_group.id}}{% endblock %}
+
+{% block header_btns %}
+    <button id="activate-product-scanner-btn">Escanear</button>
+{% endblock %}
+
+{% block content %}
+<h1>Preparación de orden</h1>
+
+<p hidden id="order-id" data-order-id="{{ order.id }}"></p>
+
+<div id="scanned-order-container">
+    {% include 'orders/partials/scanned_order.html' %}
+</div>
+
+{% endblock %}
+
+
+{% block modal %}
+    <div id="product-scanner-modal" class="modal">
+
+        <div class="modal-content">
+            <h3>Escanear código de barra de producto</h3>
+            <div id="product-reader"></div>
+            <button id = "product-scanner-cancel-btn">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="ean-scan-error-modal" class="modal">
+
+        <div class="modal-content">
+            <i id = "ean-scan-error-sign" style="font-style: normal; font-size: 2rem;">&#10060;</i>
+            <h3 id = "ean-scan-error-header">Error</h3>
+            <p id="ean-scan-error-text"></p>
+            <button id = "close-ean-error-modal">Aceptar</button>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="{% static 'prepare_order.js' %}"></script>
+{% endblock %}

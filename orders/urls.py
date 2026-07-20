@@ -6,9 +6,12 @@ app_name = 'orders'
 
 urlpatterns = [
     path('ml_webhook/', views.ml_webhook, name='ml_webhook'), #Este path va a establecer la url https://tudominio.com/orders/ml_webhook/ como 'endpoint' o 'Callback URL' para recibir automáticamente la data de las solicitudes POST de las notificaciones de la API de mercado libre. La data de estas POST requests van a ser recibidas por el view 'ml_webhook'.
-    path('scanned-order-label/<str:shipping_id>/', views.scanned_order_label, name='scanned_order_label'),
     path('<slug>', views.orders, name='orders'),
+    path('<slug>/groups-of-orders/', views.groups_of_orders, name='groups_of_orders'),
     path('order_group/<int:id>/', views.order_group, name='order_group'),
+    path('order_group/<int:group_id>/scanned-order-label/', views.scanned_order_label, name='scanned_order_label'),
+    path('order_group/<int:group_id>/prepare-order/<int:id>/', views.prepare_order, name='prepare_order'),
+    path('<int:id>/scan-product-ean/', views.scan_product_ean, name='scan_product_ean'),
 
 ]
 

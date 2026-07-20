@@ -59,5 +59,5 @@ class BaseDerivatedFormSet(BaseFormSet):
 
             sku = form.cleaned_data.get('sku')
             if sku in skus:
-                raise ValidationError("Sku drivado repetido en formulario.")
+                raise ValidationError("Sku derivado repetido en formulario.")
             skus.add(sku)

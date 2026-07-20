@@ -9,4 +9,47 @@
 {% block content %}
 <h1>Catálogo de productos</h1>
 
+<div class="products-wrapper">
+    {% for product in products %}
+        <div class="product-div">
+
+
+            <div id="product-detail-div">
+                <i class="product-field">Detalle</i>
+                <p class="product-data-sku">{{product.sku}}</p>
+                <p class="product-data-name">{{product.product_name}}</p>
+            </div>
+
+            <div id="product-stock-div">
+                <i class="product-field">Stock</i>
+                <p class="product-data-stock">{{product.stock}}</p>
+            </div>
+            
+            
+            <div class="product-option-btn">&#8942;
+                <div class="product-dropdown-content">
+                    <a href="#" style="white-space: nowrap;">Ver detalle</a>
+                    <a href="{% url 'products:edit_product' product.id %}" style="white-space: nowrap;">Editar Producto</a>
+                </div>
+            </div>
+                
+
+            
+
+
+
+            <div id="product-category-div">
+                <i class="product-field">Categoría</i>
+                <p class="product-data-category">{{product.category}}</p>
+            </div>
+
+
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'product_catalogue.js' %}"></script>
 {% endblock %}

@@ -20,6 +20,16 @@
         <i style="color: white; cursor: pointer; font-style: normal; font-size: 1.5rem;">&#xf08b;</i>
     </header>
 
+    {% if messages %}
+        <ul id="messages-container">
+            {% for message in messages %}
+                <div class="{{ message.tags }}">
+                    <li> {{ message }} <i class = "message-close-btn">&#10005;</i></li>
+                </div>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
 	<nav>
         <i id="nav-close-btn">&#10006;</i>
         <ul>
@@ -36,7 +46,18 @@
            </li>
 
            <li>
-                <a href="{% url 'orders:orders' 'mercado-libre'%}">Mercado Libre</a>
+                <a class="dropbtn">Mercado Libre</a>
+                <div class="dropdown-content">
+                    <ul>
+                        <li>
+                            <a href="{% url 'orders:orders' 'mercado-libre'%}">Órdenes</a>
+                        </li>
+                        
+                        <li>
+                            <a href="{% url 'orders:groups_of_orders' 'mercado-libre'%}">Grupos de órdenes</a>
+                        </li>
+                    </ul>
+                </div>
            </li>
         </ul>
     </nav>

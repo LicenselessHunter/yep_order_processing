@@ -33,6 +33,11 @@ class marketplace(models.Model):
 
 
 class orders_group(models.Model):
+    GROUP_LOGISTIC_TYPE = [
+        ('collect', 'ML Colecta'),
+        ('flex', 'ML Flex'),
+    ]
+    
     GROUP_STATUS = [
         ('in_progress', 'in_progress'),
         ('processed', 'processed'),
@@ -40,8 +45,9 @@ class orders_group(models.Model):
 
     marketplace = models.ForeignKey(marketplace, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, blank=True, choices=GROUP_STATUS, default='in_progress')
+    logistic_type = models.CharField(max_length=20, null=True, blank=True, choices=GROUP_LOGISTIC_TYPE)
     creation_date_time = models.DateTimeField(auto_now_add=True)
-    processed_date_time = models.DateTimeField(null=True)
+    processed_date_time = models.DateTimeField(null=True, blank=True)
 
 class order(models.Model):
     LOGISTIC_TYPE_CHOICES = [
@@ -53,6 +59,9 @@ class order(models.Model):
         ('ready_to_print', 'ready_to_print'),
         ('ready_to_ship', 'ready_to_ship'),
         ('preparing', 'Preparando'),
+        ('not_prepared', 'No preparado'),
+        ('partially_prepared', 'Parcialmente preparado'),
+        ('prepared', 'Preparado'),
     ]
 
     marketplace = models.ForeignKey(marketplace, on_delete=models.CASCADE)
@@ -66,7 +75,7 @@ class order(models.Model):
     estimated_pickup_time = models.DateTimeField(null=True)
 
     def __str__(self):
-        return f"Order {self.order_id} - {self.shipping_id} - {self.logistic_type} - {self.status}"
+        return f"Order {self.orders_group} - Order {self.order_id} - {self.shipping_id} - {self.logistic_type} - {self.status}"
 
     #Model metadata is "anything that’s not a field", such as ordering options (ordering), database table name (db_table), or human-readable singular and plural names (verbose_name and verbose_name_plural). None are required, and adding class Meta to a model is completely optional.
 
@@ -83,6 +92,7 @@ class order_product(models.Model):
     sku_seller = models.CharField(max_length=100, blank=True)
     sku_marketplace = models.CharField(max_length=100, blank=True)
     quantity = models.IntegerField(default=1)
+    quantity_scanned = models.IntegerField(default=0)
     creation_date_time = models.DateTimeField(null=True)
 
     def __str__(self):

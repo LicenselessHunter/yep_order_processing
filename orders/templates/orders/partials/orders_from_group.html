@@ -1,12 +1,18 @@
 {% for order in group_orders %}
-    <div class = "order-from-group-container" data-order-id="{{ order.order_id }}">
+    <div class = "order-from-group-container">
         <ul class = "title-from-order-in-group">
             <li>{{order.order_id}}</li>
-            {% if order.status == 'preparing' %}
-                <li class = "order-preparing-status">Preparando</li>
-            {% else %}
-                <li>{{order.status}}</li>
-            {% endif %}
+                {% if order.status == 'preparing' %}
+                    <li class = "order-preparing-status">Preparando</li>
+                {% elif order.status == 'prepared' %}
+                    <li class = "order-prepared-status">Preparado</li>
+                {% elif order.status == 'not_prepared' %}
+                    <li class = "not-prepared-status">No preparado</li>
+                {% elif order.status == 'partially_prepared' %}
+                    <li class = "partially_prepared-status">Parcialmente preparado</li>
+                {% else %}
+                    <li>{{order.status}}</li>
+                {% endif %}
         </ul>
 
         <div class="products-from-order-in-group-container">
@@ -19,7 +25,7 @@
                         <p>{{ product.sku_seller }}</p>
                         <p>Nombre del producto</p>
                     </div>
-                    <p id = "product-counter-cell" class="product-cell-data">0 / {{ product.quantity }}</p>
+                    <p id = "product-counter-cell" class="product-cell-data">{{ product.quantity_scanned }} / {{ product.quantity }}</p>
 
                 {% endfor %}
             </div>
