@@ -12,8 +12,6 @@ def products_catalogue(request):
         'products': products,
     }
     
-    #messages.success(request, 'hola.')
-    #messages.error(request, 'AAAAA.')
     return render(request, 'products/products_catalogue.html', context)
 
 

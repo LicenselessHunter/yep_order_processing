@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'accounts',
     'orders',
     'products',
     'django_q', #Django Q2 is a native Django task queue, scheduler and worker application using Python multiprocessing. Doc: https://django-q2.readthedocs.io/en/master/index.html
@@ -70,6 +71,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.LoginRequiredMiddleware', #changes your application's security posture to be private by default. Instead of manually adding @login_required to every view, this middleware automatically redirects all unauthenticated requests to your login page. Si es que se quiere especificar un view que no requiere login, se puede usar un @login_not_required() decorator.
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

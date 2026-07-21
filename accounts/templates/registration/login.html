@@ -1,0 +1,33 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es" style="min-height: 100%; display: grid;">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iniciar Sesión</title>
+    <link rel="stylesheet" href="{% static 'login.css' %}">
+</head>
+
+<body style="margin: auto;">
+
+    <form method="POST">
+        {% csrf_token %}
+        <h2 id="login-form-title">Ingreso</h2>
+
+        {% if form.errors %}
+            <p id="login-error">Usuario y/o contraseña incorrecto/s</p>
+        {% endif %}
+
+        {% for field in form %}
+            <p>{{ field.label_tag }}{{ field }}</p>
+        {% endfor %}
+
+        <input type="hidden" name="next" value="{% url 'home' %}">
+        <button id="login-btn" type="submit">Iniciar sesión</button>
+    </form>
+
+</body>
+
+</html>

@@ -28,11 +28,24 @@ header {
     align-items: center;
 }
 
+#logout-btn {
+    background-color: transparent; 
+    border: 0; 
+    padding: 0; 
+    display: flex;
+}
+
 #nav-open-btn {
     color: white;
     cursor: pointer;
     font-style: normal;
     font-size: 1.5rem;
+}
+
+@media (min-width: 40em){
+    header {
+        height: 1.68rem;
+    }
 }
 
 /*---- DJANGO MESSAGES ----*/

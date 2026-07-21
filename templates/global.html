@@ -13,11 +13,19 @@
 <body>
 
 	<header>
-        <i id="nav-open-btn">&#9776;</i>
+        <div id = "logo-div">
+            <i id="nav-open-btn">&#9776;</i>
+        </div>
+        
         <div class = "header-btn-container">
             {% block header_btns %}{% endblock %}
         </div>
-        <i style="color: white; cursor: pointer; font-style: normal; font-size: 1.5rem;">&#xf08b;</i>
+
+         
+        <form action="{% url 'accounts:logout' %}" method="POST">
+            {% csrf_token %}
+            <button id="logout-btn"><img src="{% static 'images/log-out.svg' %}" alt="log-out"></button>
+        </form>
     </header>
 
     {% if messages %}
@@ -34,7 +42,7 @@
         <i id="nav-close-btn">&#10006;</i>
         <ul>
            <li>
-                <a>Inicio</a>
+                <a href="{% url 'home'%}">Inicio</a>
            </li>
 
            <li>
