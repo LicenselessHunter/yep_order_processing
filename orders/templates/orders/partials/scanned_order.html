@@ -5,6 +5,10 @@
                 <li class = "order-preparing-status">Preparando</li>
             {% elif order.status == 'prepared' %}
                 <li class = "order-prepared-status">Preparado</li>
+            {% elif order.status == 'not_prepared' %}
+                <li class = "not-prepared-status">No preparado</li>
+            {% elif order.status == 'partially_prepared' %}
+                <li class = "partially_prepared-status">Parcialmente preparado</li>
             {% else %}
                 <li>{{order.status}}</li>
             {% endif %}
@@ -12,11 +16,14 @@
 
     <div class="products-from-order-in-group-container">
         <div class = "products-from-order-in-group">
+            
             <p class="product-cell-header">Producto</p>
             <p class="product-cell-header">Unidades</p>
             {% for product in order.order_product_set.all %}
-
                 <div class="product-cell-data">
+                    {% if product.prepared_without_stock == True %}
+                        <p class = "prepared-no-stock-mark"><i>&#9888;</i> Preparado sin stock</p>
+                    {% endif %}
                     <p>{{ product.sku_seller }}</p>
                     <p>Nombre del producto</p>
                 </div>

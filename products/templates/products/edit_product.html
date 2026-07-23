@@ -34,9 +34,9 @@
             {% endif %}
         {% endfor %}
         
+        {{ existing_derivated_formset.management_form }}
         {% if existing_derivated_formset.total_form_count != 0 %}
             <h3>SKU/s derivado/s</h3>
-            {{ existing_derivated_formset.management_form }}
             <div id="existing-derivated-container">
                 {{ existing_derivated_formset }}
                 

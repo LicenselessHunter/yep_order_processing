@@ -31,6 +31,8 @@ def create_product(request):
                     derivated = derivated_form.save(commit=False)
                     derivated.local_product = product_instance
                     derivated.save()
+
+            messages.success(request, f'El producto {product_instance.sku} fue creado con éxito')
             return redirect('products:products_catalogue')
 
     else:
@@ -67,6 +69,8 @@ def edit_product(request, id):
                     derivated = derivated_form.save(commit=False)
                     derivated.local_product = product_instance
                     derivated.save()
+
+            messages.success(request, f'El producto {product_instance.sku} fue editado con éxito')
             return redirect('products:products_catalogue')
     else:
         form = product_edit_form(instance=product_instance)

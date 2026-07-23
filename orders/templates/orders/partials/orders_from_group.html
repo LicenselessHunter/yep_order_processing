@@ -17,11 +17,14 @@
 
         <div class="products-from-order-in-group-container">
             <div class = "products-from-order-in-group">
+                
                 <p class="product-cell-header">Producto</p>
                 <p class="product-cell-header">Unidades</p>
                 {% for product in order.order_product_set.all %}
-
                     <div class="product-cell-data">
+                        {% if product.prepared_without_stock == True %}
+                            <p class = "prepared-no-stock-mark"><i>&#9888;</i> Preparado sin stock</p>
+                        {% endif %}
                         <p>{{ product.sku_seller }}</p>
                         <p>Nombre del producto</p>
                     </div>

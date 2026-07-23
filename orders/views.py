@@ -90,7 +90,7 @@ def scan_product_ean(request, id):
 
     order_product_instance = matching_order_products.filter(quantity_scanned__lt=F('quantity')).order_by('id').first() #Dentro del query recién creado, se va a tomar el 'order_product' que tenga su campo 'quantity_scanned' menor a su campo 'quantity'...
 
-    if order_product_instance is None: #En el caso en que el producto escaneado no est}
+    if order_product_instance is None: #En el caso en que el producto escaneado no esté relacionado a la orden
         #En el caso en que el producto escaneado esté relacionado a la orden, pero ya fue completado (quantity_scanned=quantity).
         if matching_order_products.exists():
             response = HttpResponse('Este producto ya fue completado para esta orden', status=400)
@@ -100,12 +100,19 @@ def scan_product_ean(request, id):
         response = HttpResponse('La orden actual no contiene el producto del código escaneado', status=400)
         return response
 
+    if product_instance.stock == 0 and order_product_instance.prepared_without_stock == False:
+        response = HttpResponse(f'El producto {product_instance.sku} no tiene stock disponible', status=400)
+        #response['HX-Trigger'] = 'noStock'
+        response['No-Stock-product'] = json.dumps({'orderProductId': order_product_instance.id}) #Header personalizado del http request, aquí se pasará JSON con el id del 'order_product' sin stock. Esto se procesará en el archivo JS, dentro del evento 'htmx:responseError'.
+        return response
+
 
     order_product_instance.quantity_scanned += 1
     order_product_instance.save()
 
-    product_instance.stock -= 1
-    product_instance.save()
+    if order_product_instance.prepared_without_stock == False:
+        product_instance.stock -= 1
+        product_instance.save()
 
     order_fully_scanned = not order_product.objects.filter(order=order_instance).exclude(quantity_scanned=F('quantity')).exists()
 
@@ -242,16 +249,16 @@ def orders(request, slug):
 
 
     if request.method == 'POST' and 'collect_prepare_btn' in request.POST:
-        group = orders_group.objects.create(marketplace=marketplace_instance)
+        group = orders_group.objects.create(marketplace=marketplace_instance, logistic_type='collect')
         collect_ready_to_ship.update(orders_group=group, status='preparing')
-
+        messages.success(request, 'Grupo de pedidos iniciado con éxito.')
         return redirect('orders:order_group', id=group.id)
 
 
     if request.method == 'POST' and 'flex_prepare_btn' in request.POST:
-        group = orders_group.objects.create(marketplace=marketplace_instance)
+        group = orders_group.objects.create(marketplace=marketplace_instance, logistic_type='flex')
         flex_ready_to_ship.update(orders_group=group, status='preparing')
-
+        messages.success(request, 'Grupo de pedidos iniciado con éxito.')
         return redirect('orders:order_group', id=group.id)
 
     context = {
@@ -271,6 +278,10 @@ def order_group(request, id):
     group_orders = order.objects.filter(orders_group=order_group_instance)
     prepared_orders_count = group_orders.filter(status='prepared').count()
     total_orders_count = group_orders.count()
+
+    #products_sku_set = product.objects.values_list('sku', flat=True)
+    #derivated_skus_set = derivated_sku.objects.values_list('sku', flat=True)
+
 
 
     if request.method == 'POST' and 'confirm-order-processing' in request.POST:
@@ -300,6 +311,8 @@ def order_group(request, id):
         'group_orders': group_orders,
         'prepared_orders_count': prepared_orders_count,
         'total_orders_count': total_orders_count,
+        #'products_sku_set': products_sku_set,
+        #'derivated_skus_set': derivated_skus_set,
     }
 
     #Si es un get request de un elemento con atributos HTMX
@@ -314,6 +327,14 @@ def prepare_order(request, group_id, id):
 
     order_instance = get_object_or_404(order, id=id)
     group_instance = get_object_or_404(orders_group, id=group_id)
+
+    if request.method == 'POST' and 'prepare-noStock-product' in request.POST:
+        no_stock_order_product = order_product.objects.get(id = request.POST.get('product-id-without-stock'))
+        no_stock_order_product.prepared_without_stock = True
+        no_stock_order_product.save()
+
+        messages.success(request, 'Ahora puedes preparar el producto sin stock')
+        return redirect('orders:prepare_order', group_id=group_instance.id, id=order_instance.id)
 
     context = {
         'order': order_instance,

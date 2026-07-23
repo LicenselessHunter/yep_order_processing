@@ -31,10 +31,30 @@
     <div id="ean-scan-error-modal" class="modal">
 
         <div class="modal-content">
-            <i id = "ean-scan-error-sign" style="font-style: normal; font-size: 2rem;">&#10060;</i>
+            <i id = "ean-scan-error-sign">&#10060;</i>
             <h3 id = "ean-scan-error-header">Error</h3>
             <p id="ean-scan-error-text"></p>
             <button id = "close-ean-error-modal">Aceptar</button>
+        </div>
+    </div>
+
+
+    <div id="no-stock-modal" class="modal">
+
+        <div class="modal-content">
+            <i id = "no-stock-warning-sign">&#9888;</i>
+            <h3>Advertencia</h3>
+            <p id="no-stock-warning-text"></p>
+            <h4>¿Deseas prepararlo de todos modos?</h4>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" id="product-id-without-stock" name="product-id-without-stock">
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button name = "prepare-noStock-product">Si</button>
+                    <button id = "close-no-stock-modal">No</button>
+                </div>
+            </form>
         </div>
     </div>
 

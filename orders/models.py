@@ -93,6 +93,7 @@ class order_product(models.Model):
     sku_marketplace = models.CharField(max_length=100, blank=True)
     quantity = models.IntegerField(default=1)
     quantity_scanned = models.IntegerField(default=0)
+    prepared_without_stock = models.BooleanField(default=False)
     creation_date_time = models.DateTimeField(null=True)
 
     def __str__(self):

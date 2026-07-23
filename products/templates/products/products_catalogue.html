@@ -34,13 +34,13 @@
             </div>
                 
 
-            
-
-
-
             <div id="product-category-div">
                 <i class="product-field">Categoría</i>
-                <p class="product-data-category">{{product.category}}</p>
+                {% if product.category is None %}
+                    <p class="product-data-category">Sin categoría</p>
+                {% else %}
+                    <p class="product-data-category">{{product.category}}</p>
+                {% endif %}
             </div>
 
 

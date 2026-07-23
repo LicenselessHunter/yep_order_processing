@@ -9,6 +9,9 @@ const order_id = p_element.dataset.orderId;
 const ean_scan_error_modal = document.getElementById('ean-scan-error-modal');
 const close_ean_error_modal = document.getElementById('close-ean-error-modal')
 
+const no_stock_modal = document.getElementById('no-stock-modal')
+const close_no_stock_modal = document.getElementById('close-no-stock-modal')
+
 let html5QrCode = new Html5Qrcode("product-reader", { formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13 ] });
 //Initialize the code scanner. El parámetro que acepta es el id del elemento html que va a abrir el scanner. En este caso, el div con id 'reader'. En el segundo parámetro se puede especificar explicitamente los tipos de códigos que se pueden escanearm en este caso, el escaner solo permite EAN_13.
 
@@ -31,14 +34,36 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 
-
+//The htmx:response:error event fires when the server responds with an HTTP error status code (400 or higher). Un status_code erroneo es reconocido por htmx y le dice que no debe cambiar el el elemento target (En este caso #scanned-order-container). Sn este evento, htmx cambiaría el elemento target entero por un modal de error.
 document.body.addEventListener('htmx:responseError', function(evt) {
-    const msg = evt.detail.xhr.responseText;
-    ean_scan_error_modal.style.display = 'flex';
-    ean_scan_error_modal.style.flexDirection = 'column';
-    ean_scan_error_modal.style.alignItems = 'center';
-    ean_scan_error_modal.style.justifyContent = 'center';
-    document.getElementById('ean-scan-error-text').textContent = msg;
+    //const msg = evt.detail.xhr.responseText;
+
+    //detail.xhr - the XMLHttpRequest. Is an API in the form of a JavaScript object whose methods transmit HTTP requests from a web browser to a web server. Lo vamos a usar para acceder a los detalles de la petición AJAX de htmx en caso de que tenga un status_code erroneo dentro del view 'scan_product_ean'.  
+
+    const msg = evt.detail.xhr.responseText; // detail.xhr.responseText: Returns the text received from a server following a request being sent. El texto crudo del httpresponse desde el view de django.
+    const NoStockHeader = evt.detail.xhr.getResponseHeader('No-Stock-product'); //The XMLHttpRequest method getResponseHeader() returns the string containing the text of a particular header's value. Esto es lo que va a recoger el JSON con el id del 'order_product' sin stock.
+
+
+    if (NoStockHeader != null) { //Si es un error de escaneo de producto relacionado a no tener stock.
+        let NoStockData = JSON.parse(NoStockHeader); //The JSON.parse() static method parses a JSON string, constructing the JavaScript value or object described by the string. 
+
+        no_stock_product_input = document.getElementById('product-id-without-stock')
+        no_stock_product_input.value = NoStockData.orderProductId;
+
+        //no_stock_modal.dataset.orderProductId = NoStockData.orderProductId; //Esta instrucción crea/actualiza un atributo 'data-order-product-id="<id>"' dentro de <div id="no-stock-modal">.
+        no_stock_modal.style.display = 'flex';
+        no_stock_modal.style.flexDirection = 'column';
+        no_stock_modal.style.alignItems = 'center';
+        no_stock_modal.style.justifyContent = 'center';
+        document.getElementById('no-stock-warning-text').textContent = msg;
+
+    } else { //Si es un error de escaneo de producto de cualquier otro tipo. (Estos no tienen header)
+        ean_scan_error_modal.style.display = 'flex';
+        ean_scan_error_modal.style.flexDirection = 'column';
+        ean_scan_error_modal.style.alignItems = 'center';
+        ean_scan_error_modal.style.justifyContent = 'center';
+        document.getElementById('ean-scan-error-text').textContent = msg;
+    }
 
 });
 
@@ -87,4 +112,8 @@ cancel_scan_btn.addEventListener('click', () => {
 
 close_ean_error_modal.addEventListener('click', () => {
     ean_scan_error_modal.style.display = 'none';
+});
+
+close_no_stock_modal.addEventListener('click', () => {
+    no_stock_modal.style.display = 'none';
 });
