@@ -162,6 +162,17 @@ STATICFILES_DIRS = [ #is the list of folders where Django will search for additi
 
 STATIC_ROOT = BASE_DIR / "staticfiles" #Is the folder where static files will be stored after using manage.py collectstatic. Solo se usa en producción
 
+
+
+#By default, Django stores files locally, using the MEDIA_ROOT and MEDIA_URL settings. Esto es para archivos subidos por los usuarios, como imágenes.
+
+MEDIA_ROOT = BASE_DIR/"media/" #Absolute filesystem path to the directory that will hold user-uploaded files. Is used to tell django to store the media files in respective directory in the file system.
+
+MEDIA_URL = 'media/' #URL that handles the media served from MEDIA_ROOT, used for managing stored files. Media url is used by django to access the media files. Is the URL that makes the static media accessible over HTTP by web browsers.
+
+
+
+
 #---- Mercado libre API data -----
 ML_CLIENT_ID = os.getenv('ML_CLIENT_ID')
 ML_CLIENT_SECRET = os.getenv('ML_CLIENT_SECRET')

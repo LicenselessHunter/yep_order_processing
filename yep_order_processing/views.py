@@ -3,6 +3,4 @@ from django.contrib.auth.decorators import login_required #Se importa el decorat
 from products.models import product
 
 def home(request):
-
-
 	return render(request, "home.html")

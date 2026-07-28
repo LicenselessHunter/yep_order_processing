@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import F, Min, Count, Q #Min() function is used to find the minimun value of a particular field
 from .models import order, marketplace, orders_group, order_product
+from .forms import finish_orders_group_form
 from products.models import product, derivated_sku
 from django_q.tasks import async_task
 from django.views.decorators.csrf import csrf_exempt
@@ -321,6 +322,38 @@ def order_group(request, id):
         return render(request, 'orders/partials/order_group_htmx.html', context)
 
     return render(request, 'orders/order_group.html', context)
+
+
+def finish_order_group(request, group_id):
+    group_instance = get_object_or_404(orders_group, id=group_id)
+
+    if group_instance.status != 'processed':
+        messages.error(request, f'No puedes finalizar este grupo')
+        return redirect('orders:order_group', id=group_instance.id)
+
+    if request.method == 'POST':
+        form = finish_orders_group_form(request.POST, request.FILES, instance=group_instance)
+        
+        if form.is_valid():
+            form.save()
+
+            group_instance.status = 'dispatched'
+            group_instance.dispatched_date_time = timezone.now()
+            group_instance.dispatched_by = request.user
+            group_instance.save()
+
+            messages.success(request, f'Grupo de órdenes correctamente finalizado')
+            return redirect('orders:order_group', id=group_instance.id)
+
+    else:
+        form = finish_orders_group_form(instance=group_instance)
+    
+    context = {
+        'group_instance': group_instance,
+        'form': form,
+    }
+
+    return render(request, 'orders/finish_order_group.html', context)
 
 
 def prepare_order(request, group_id, id):

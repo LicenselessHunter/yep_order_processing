@@ -34,7 +34,7 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 
-//The htmx:response:error event fires when the server responds with an HTTP error status code (400 or higher). Un status_code erroneo es reconocido por htmx y le dice que no debe cambiar el el elemento target (En este caso #scanned-order-container). Sn este evento, htmx cambiaría el elemento target entero por un modal de error.
+//The htmx:response:error event fires when the server responds with an HTTP error status code (400 or higher). Un status_code erroneo es reconocido por htmx y le dice que no debe cambiar el el elemento target (En este caso #scanned-order-container). Sin este evento, htmx cambiaría el elemento target entero por un modal de error.
 document.body.addEventListener('htmx:responseError', function(evt) {
     //const msg = evt.detail.xhr.responseText;
 

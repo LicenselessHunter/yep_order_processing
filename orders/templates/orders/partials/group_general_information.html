@@ -1,11 +1,23 @@
 <p id="order-group-id" data-group-id="{{ order_group_instance.id }}"><b>Id de este grupo: </b>{{ order_group_instance.id }}</p>
 
+<p><b>Marketplace: </b>{{ order_group_instance.marketplace.marketplace_name }}</p>
+
 {% if order_group_instance.status == 'in_progress' %}
     <p><b>Estado:</b> <span class = "group-order-inProgress-status">En progreso</span></p>
 
 {% elif order_group_instance.status == 'processed' %}
     <p><b>Estado:</b> <span class = "group-order-processed-status">Procesado</span></p>
 
+{% elif order_group_instance.status == 'dispatched' %}
+    <p><b>Estado:</b> <span class = "group-order-dispatched-status">Despachado</span></p>
+
+{% endif %}
+
+{% if order_group_instance.logistic_type == 'collect' %}
+    <p><b>Tipo logístico: </b>Colecta</p>
+
+{% elif order_group_instance.logistic_type == 'flex' %}
+    <p><b>Tipo logístico: </b>Flex</p>
 {% endif %}
 
 <p><b>Órdenes preparadas: </b>{{ prepared_orders_count }} / {{ total_orders_count }}</p>

@@ -52,6 +52,10 @@
                 
                 {% elif order_group.status == 'processed' %}
                     <li class = "group-order-processed-status">Procesado</li>
+
+                {% elif order_group.status == 'dispatched' %}
+                    <li class = "group-order-dispatched-status">Despachado</li>
+
                 {% endif %}
                 <li>{{order_group.prepared_count}}/{{order_group.order_set.count}}</li>
                 <li><button class="order-group-detail-btn"><a href="{% url 'orders:order_group' order_group.id %}">Ingresar</a></button></li>

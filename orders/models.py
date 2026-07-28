@@ -1,7 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
-from encrypted_fields.fields import EncryptedTextField #Aquí se importan los campos para encriptar data. Tener en cuenta que estos campos van a seguir siendo visibles en la página de admin. 
+from encrypted_fields.fields import EncryptedTextField #Aquí se importan los campos para encriptar data. Tener en cuenta que estos campos van a seguir siendo visibles en la página de admin.
+from django.contrib.auth.models import User #Se importa el model User que esta implicito en Django.
 
 # Create your models here.
 
@@ -41,6 +42,7 @@ class orders_group(models.Model):
     GROUP_STATUS = [
         ('in_progress', 'in_progress'),
         ('processed', 'processed'),
+        ('dispatched', 'dispatched'),
     ]
 
     marketplace = models.ForeignKey(marketplace, on_delete=models.CASCADE)
@@ -48,6 +50,17 @@ class orders_group(models.Model):
     logistic_type = models.CharField(max_length=20, null=True, blank=True, choices=GROUP_LOGISTIC_TYPE)
     creation_date_time = models.DateTimeField(auto_now_add=True)
     processed_date_time = models.DateTimeField(null=True, blank=True)
+    
+    courier_name = models.CharField(max_length=60)
+    courier_license_plate = models.CharField(max_length=6)
+    manifest_image = models.ImageField()
+    dispatched_date_time = models.DateTimeField(null=True, blank=True)
+    dispatched_by = models.ForeignKey(User, on_delete=models.SET_DEFAULT, default=None, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.courier_license_plate:
+            self.courier_license_plate = self.courier_license_plate.upper()
+        super().save(*args, **kwargs)
 
 class order(models.Model):
     LOGISTIC_TYPE_CHOICES = [

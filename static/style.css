@@ -626,10 +626,14 @@ nav li:hover {
 }
 
 .group-order-processed-status {
-    color: #2efb00;
+    color: #56e907;
     font-weight: bold;
 }
 
+.group-order-dispatched-status {
+    color: #09f363;
+    font-weight: bold;  
+}
 
 
 /*
@@ -703,6 +707,26 @@ nav li:hover {
 .partially_prepared-status {
     color: rgb(234, 237, 8);
 }
+
+
+
+#order-group-courier-information{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 60rem;
+}
+
+#manifest-image-container {
+    place-self: center;
+    grid-column-end: span 2;
+    width: 10rem;
+}
+
+#manifest-image {
+    max-width: 100%;
+}
+
+
 
 .products-from-order-in-group-container {
     background-color: black; 
@@ -893,3 +917,42 @@ nav li:hover {
     min-width: 4rem;
 }
 */
+
+
+/*---- finish_order_group ----*/
+.order-group-finish-div {
+    background-color: #3b3939;
+    color: white;
+    padding: 1.2rem;
+    border: 0.3rem solid rgb(161, 156, 156);
+    border-radius: 2%;
+}
+
+
+.order-group-finish-form {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.order-group-finish-form p {
+    margin: 0;
+}
+
+.order-group-finish-form input {
+        width: 100%;
+}
+
+.order-group-finish-form img {
+    max-width: 100%;
+}
+
+.order-group-finish-form button {
+    justify-self: center;
+}
+
+.finish-form-error {
+    padding: 0.1rem;
+    background-color: #e95555;
+    color: #f5e9e9;
+    border: 0.1rem solid #fecaca;
+}

@@ -17,7 +17,7 @@ window.addEventListener('click', function(event) {
     product_dropbtn.children[0].style.display = "flex"; /*Se activa el dropdown*/
   }
 
-  /*Si es que se hace click en cualquier lugar de la ventana, excepto un botón de activavión del dropdown*/
+  /*Si es que se hace click en cualquier lugar de la ventana, excepto un botón de activción del dropdown*/
   else if (!event.target.matches('.product-option-btn') && product_dropbtn) {
     product_dropbtn.children[0].style.display = "none"; /*Se desactiva el dropdown*/
   }

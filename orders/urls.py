@@ -11,6 +11,9 @@ urlpatterns = [
     path('order_group/<int:id>/', views.order_group, name='order_group'),
     path('order_group/<int:group_id>/scanned-order-label/', views.scanned_order_label, name='scanned_order_label'),
     path('order_group/<int:group_id>/prepare-order/<int:id>/', views.prepare_order, name='prepare_order'),
+
+    path('order_group/<int:group_id>/finish_group', views.finish_order_group, name='finish_order_group'),
+
     path('<int:id>/scan-product-ean/', views.scan_product_ean, name='scan_product_ean'),
 
 ]
