@@ -13,21 +13,27 @@
 
         {% for field in form %}
             {% if field.name == 'ean' %}
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div id="product-ean-form-section">
                     {{ field.label_tag }}
                     {{ field }}
                     <button id="activate-product-scanner-btn" type="button">Escanear</button>
-                    <!--<button id="activate-scan" type="button">Escanear</button>-->
                     
                 </div>
+
+            {% elif field.name == 'stock' %}
+                <div id="product-stock-form-section">
+                    <p>{{ field.label_tag }}</p>
+                    <p>{{ field }}</p>
+                </div>
+
             {% else %}
                 <p>{{ field.label_tag }}{{ field }}</p>
             {% endif %}
             {% if field.errors %}
             
-            <ul>
+            <ul class="product-form-error-list">
             {% for error in field.errors %}
-                <li>{{ error }}</li>
+                <li class="product-form-error">{{ error }}</li>
             {% endfor %}
             </ul>
 
@@ -38,7 +44,10 @@
         {% if existing_derivated_formset.total_form_count != 0 %}
             <h3>SKU/s derivado/s</h3>
             <div id="existing-derivated-container">
-                {{ existing_derivated_formset }}
+                <!--{{ existing_derivated_formset }}-->
+                {% for form in existing_derivated_formset %}
+                    <div class = "existing-derivated-form">{{ form }}</div>
+                {% endfor %}
                 
             </div>
         {% endif %}
@@ -58,7 +67,7 @@
 
         {% for form in formset %}
             {% if form.errors %}
-                <div>
+                <div class="derivated-sku-errors">
                     <strong>SKU {{ form.sku.value }}</strong>
                     <ul>
                     {% for field in form %}

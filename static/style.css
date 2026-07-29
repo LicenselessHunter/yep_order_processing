@@ -2,6 +2,8 @@ button {
     cursor: pointer;
 }
 
+
+
 /*---- HEADER ----*/
 .header-btn-container {
     display: flex;
@@ -48,6 +50,8 @@ header {
     }
 }
 
+
+
 /*---- DJANGO MESSAGES ----*/
 #messages-container {
     position: fixed;
@@ -91,6 +95,8 @@ header {
     }
 }
 
+
+
 /*---- MAIN ----*/
 main {
     margin-top: 6rem;
@@ -117,6 +123,8 @@ main {
 .order_totals p:hover {
     background-color: rgb(130, 126, 126);
 }
+
+
 
 
 /*---- NAV ----*/
@@ -178,8 +186,6 @@ nav li:hover {
 }
 
 
-
-
 @media (min-width: 40em){
     nav {
         top: 2.7rem;
@@ -200,6 +206,8 @@ nav li:hover {
         margin-left: 14rem;
     }
 }
+
+
 
 /*---- product_catalogue css ----*/
 .products-wrapper {
@@ -324,7 +332,9 @@ nav li:hover {
 
 }
 
-/*---- orders css ----*/
+
+
+/*---- ORDERS CSS ----*/
 .order_totals_container {
     display: flex;
     gap: 20px;
@@ -379,8 +389,9 @@ nav li:hover {
     border-bottom: 1px solid rgb(220, 220, 220);
 }
 
-/*---- GLOBAL MODAL CSS ----*/
 
+
+/*---- GLOBAL MODAL CSS ----*/
 .modal {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
@@ -410,11 +421,6 @@ nav li:hover {
     border-radius: 1rem;
 }
 
-/*
-.modal-content h2 {
-    color: white;
-}
-*/
 
 .modal_print_table {
     text-align: center; 
@@ -441,31 +447,113 @@ nav li:hover {
 }
 
 
-/*------ CREATE PRODUCT FORM ------*/
+
+
+/*------ PRODUCT FORMS ------*/
 .form-title {
-    background-color: black;
+    background-color: #3b3939;
     color: white;
     padding: 0.5rem;
     border-radius: 1rem;
-    border: 0.25rem solid rgb(123, 118, 118);
+    border: 0.3rem solid rgb(161, 156, 156);
 }
 
 #product-form {
     display: grid;
     gap: 3rem;
-    background-color: black;
+    background-color: #3b3939;
     color: white;
     padding: 1rem;
     border-radius: 1rem;
-    border: 0.25rem solid rgb(123, 118, 118);
+    border: 0.3rem solid rgb(161, 156, 156);
     align-items: start;
 }
 
+#product-form input{
+    width: 100%;
+}
+
+
+
+/*Sección del ean del form base del producto*/
+#product-ean-form-section {
+    display: grid; 
+    grid-template-columns: 6fr 1fr;
+    column-gap: 1rem;
+}
+
+#id_ean {
+    grid-row: 2;
+    grid-column: 1;
+}
+
+#activate-product-scanner-btn {
+    grid-row: 2;
+    grid-column: 2;
+}
+/* FIN Sección del ean del form base del producto*/
+
+
+
+/*Sección de stock del form base del producto*/
+#product-stock-form-section > p:first-child{
+    margin: 0;
+}
+
+#product-stock-form-section > p:last-child{
+    width: 7rem; 
+    margin-top: 0;
+}
+/* FIN Sección de stock del form base del producto*/
+
+
+.product-form-error-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.product-form-error {
+    width: 100%;
+    padding: 0.1rem;
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 0.1rem solid #fecaca;
+}
+
+
+
+/*FORM de skus derivados que ya existen*/
+.existing-derivated-form {
+    display: grid;
+    grid-auto-flow: column;
+    column-gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+
+/* '>' --> The CSS child combinator (>) is used to select elements that are direct children of a specific parent. */
+/* :last-child --> The :last-child CSS pseudo-class represents the last element among a group of sibling elements */ 
+.existing-derivated-form > div:last-child { /*Entonces, de los div hijos directos de '.existing-derivated-form', se seleccionará el último hijo, es decir, el div que contiene el checkbox */
+    place-self: center;
+    text-align: center;
+}
+
+.existing-derivated-form .errorlist {
+    padding: 0.1rem;
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 0.1rem solid #fecaca;
+    list-style-type: none;
+}
+/*FIN FORM de skus derivados que ya existen*/
+
+
+/*Generación de forms de skus derivados*/
 #generate-derivated-forms {
     display: grid;
     column-gap: 1rem;
-    grid-template-rows: auto auto;
-    grid-template-columns: 8fr 2fr;
+    justify-content: start;
+    /*grid-template-columns: 7fr 2fr;*/
 }
 
 #derivated-count-input {
@@ -478,7 +566,10 @@ nav li:hover {
     grid-column-start: 2;
     grid-row-start: 2;
 }
+/*FIN Generación de forms de skus derivados*/
 
+
+/*Forms de skus derivados generados*/
 #derivated-formset-container p {
     display: grid;
     column-gap: 1rem;
@@ -496,10 +587,13 @@ nav li:hover {
     grid-row-start: 2;
 }
 
-#product-form input{
-    width: 100%;
+.derivated-sku-errors {
+    background-color: #fee2e2; 
+    color: #991b1b; 
+    padding: 0.2rem; 
+    margin-top: 0.5rem;
 }
-
+/*FIN Forms de skus derivados generados*/
 
 .confirm-product-form-btn {
     justify-self: center;
@@ -516,14 +610,20 @@ nav li:hover {
 
 
 #product-reader video {
-    width: 100% !important;
+    width: 100% !important; /*The !important rule is used to give the value of a specific property the highest priority, will override ALL previous styling rules for that specific property on that element!. Se usa esto para sobreescribir la pantalla de escaneo y ajustarlo al tamaño del modal*/
 }
 
 @media (min-width: 40em){
+    .form-title {
+        /*margin-inline: 6rem;*/
+        max-width: 56rem;
+    } 
 
     #product-form {
         grid-template-columns: 1fr 1fr;
         gap: 5rem;
+        /*margin-inline: 4rem;*/
+        max-width: 55rem;
     }
 
     .confirm-product-form-btn {
@@ -531,45 +631,17 @@ nav li:hover {
     }
 }
 
-/*
-#create-product-form {
-    display: grid;
-    gap: 0.2rem;
-}
-
-#create-product-form p {
-    display: flex;
-    flex-direction: column;
-    
-}
-
-#create-product-form input{
-    width: 100%;
-}
-
-#create-derivated-skus {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 1em;
+@media (min-width: 1090px){
+    .form-title, #product-form {
+        margin-inline: 8rem;
+    }
 }
 
 
 
-#create-product-form button {
-    justify-self: center;
-}
-
-#derivated-formset-container p{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 1em;
-}
-*/
 
 
-/*---- group of orders css ----*/
+/*---- GROUPS OF ORDERS CSS ----*/
 #group-of-orders-wrapper {
     display: flex;
     flex-direction: column;
@@ -660,8 +732,7 @@ nav li:hover {
 
 
 
-/*---- orders group css ----*/
-
+/*---- ORDERS GROUP CSS ----*/
 #group-orders-cotainer {
     display: flex; 
     flex-direction: column; 
@@ -844,8 +915,7 @@ nav li:hover {
 
 
 
-/*---- prepare_order css ----*/
-
+/*---- PREPARE_ORDER CSS ----*/
 /*ean-scan-error-modal*/
 #ean-scan-error-modal .modal-content {
     background-color: white;
@@ -919,7 +989,7 @@ nav li:hover {
 */
 
 
-/*---- finish_order_group ----*/
+/*---- FINISH_ORDER_GROUP CSS ----*/
 .order-group-finish-div {
     background-color: #3b3939;
     color: white;

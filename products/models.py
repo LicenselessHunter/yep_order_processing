@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -16,8 +17,14 @@ class product(models.Model):
     )
     sku = models.CharField(unique=True, max_length=100)
     product_name = models.CharField(max_length=255)
-    stock = models.IntegerField(default=0)
-    ean = models.CharField(unique=True, max_length=50, blank=True, null=True)
+    stock = models.PositiveIntegerField(default=0)
+    ean = models.CharField(unique=True, max_length=13, blank=True, null=True, validators=[RegexValidator(r'^\d{13}$', 'El EAN debe tener exactamente 13 dígitos numéricos.')],) #A validator is a callable that takes a value and raises a ValidationError if it doesn’t meet some criteria. Validators can be useful for reusing validation logic between different types of fields. 
+    #Aquí estamos validando con RegEx para ver si el valor introducido a este campo ean corresponde con el search pattern '^\d{13}$' (El searh pattern corresponde a un número de 13 dígitos) Si no es así, entonces se gatillará un ValidationError con el mensaje que aparece en el segundo parámetro.
+    # ^ — ancla el inicio del string (nada permitido antes).
+    # \d — un dígito (0-9).
+    # {13} — exactamente 13 repeticiones de lo anterior, o sea 13 dígitos seguidos.
+    # $ — ancla el final del string (nada permitido después).
+
     creation_date_time = models.DateTimeField(auto_now_add=True)
 
     def clean(self):

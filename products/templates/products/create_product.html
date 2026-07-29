@@ -12,21 +12,26 @@
         {% csrf_token %}
         {% for field in form %}
             {% if field.name == 'ean' %}
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div id="product-ean-form-section">
                     {{ field.label_tag }}
                     {{ field }}
                     <button id="activate-product-scanner-btn" type="button">Escanear</button>
-                    <!--<button id="activate-scan" type="button">Escanear</button>-->
                     
+                </div>
+
+            {% elif field.name == 'stock' %}
+                <div id="product-stock-form-section">
+                    <p>{{ field.label_tag }}</p>
+                    <p>{{ field }}</p>
                 </div>
             {% else %}
                 <p>{{ field.label_tag }}{{ field }}</p>
             {% endif %}
             {% if field.errors %}
             
-            <ul>
+            <ul class="product-form-error-list">
             {% for error in field.errors %}
-                <li>{{ error }}</li>
+                <li class="product-form-error">{{ error }}</li>
             {% endfor %}
             </ul>
 
@@ -39,7 +44,7 @@
         <h3>SKUs derivados</h3>
 
         <div id="generate-derivated-forms">
-            <p>Generar formularios</p>
+            <p>Ingresar N° de formularios</p>
             <input id="derivated-count-input" type="number" min="0" max="10">
             <button type="button" id="generate-derivated-btn">Generar</button>
         </div>
@@ -52,7 +57,7 @@
 
         {% for form in formset %}
             {% if form.errors %}
-                <div>
+                <div class="derivated-sku-errors">
                     <strong>SKU {{ form.sku.value }}</strong>
                     <ul>
                     {% for field in form %}

@@ -18,6 +18,15 @@ class product_create_form(forms.ModelForm): #Esta clase va a representar el prod
             'ean':'EAN',
 		}
 
+		error_messages = {
+			'sku': {
+				'unique': 'Ya existe un producto con este SKU.',
+			},
+            'ean':{
+                'unique': 'Ya existe un producto con este ean.',
+            }
+		}
+
 class product_edit_form(forms.ModelForm):
     class Meta:
         model = models.product
@@ -29,6 +38,12 @@ class product_edit_form(forms.ModelForm):
             'stock': 'Stock',
             'ean': 'EAN',
         }
+
+        error_messages = {
+            'ean':{
+                'unique': 'Ya existe un producto con este ean.',
+            }
+        }
 		
 
 class derivated_sku_form(forms.ModelForm): #Esta clase va a representar el producto, va a heredar de "forms.ModelForm"
@@ -39,6 +54,12 @@ class derivated_sku_form(forms.ModelForm): #Esta clase va a representar el produ
 		labels = {
             'sku':'SKU derivado',
 		}
+
+		error_messages = {
+			'sku': {
+				'unique': 'Ya existe un SKU derivado con este valor.',
+			},
+		}        
 
 class BaseDerivatedFormSet(BaseFormSet):
     def clean(self):
