@@ -1,3 +1,4 @@
+{% load static %}
 {% for order in group_orders %}
     <div class = "order-from-group-container">
         <ul class = "title-from-order-in-group">
@@ -16,15 +17,36 @@
         </ul>
 
         <div class="products-from-order-in-group-container">
+
             <div class = "products-from-order-in-group">
                 
                 <p class="product-cell-header">Producto</p>
                 <p class="product-cell-header">Unidades</p>
                 {% for product in order.order_product_set.all %}
                     <div class="product-cell-data">
-                        {% if product.prepared_without_stock == True %}
-                            <p class = "prepared-no-stock-mark"><i>&#9888;</i> Preparado sin stock</p>
-                        {% endif %}
+
+                        <div>
+
+                            {% if product.sku_seller in products_sku_set or product.sku_seller in derivated_skus_set %}
+                            
+                                {% if product.sku_seller in derivated_skus_set %}
+                                    <div class = "order-product-mark"><div class = "derivated-sku-information-img"><img src="{% static 'images/alert-circle.svg' %}" alt="information-circle"></div> <p>Sku derivado</p></div>
+                                {% endif %}
+
+                                {% if product.sku_seller in out_of_stock_skus_set or product.sku_seller in out_of_stock_derivated_skus_set %}
+                                    <div class = "order-product-mark"><i class="critical-sign">&#9888;</i> <p>Producto sin stock</p></div>
+
+                                {% endif %}
+
+                            {% if product.prepared_without_stock == True %}
+                                <p class = "order-product-mark"><i class="warning-sign">&#9888;</i> Preparado sin stock</p>
+                            {% endif %}
+
+                            {% else %}
+                                <p class = "order-product-mark"><i class="critical-sign">&#9888;</i> Producto no registrado</p>
+                            {% endif %}
+                        </div>
+
                         <p>{{ product.sku_seller }}</p>
                         <p>Nombre del producto</p>
                     </div>

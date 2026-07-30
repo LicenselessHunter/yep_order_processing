@@ -2,6 +2,9 @@ button {
     cursor: pointer;
 }
 
+img {
+    max-width: 100%;
+}
 
 
 /*---- HEADER ----*/
@@ -838,14 +841,35 @@ nav li:hover {
 .product-cell-data {
     background-color: white;
 }
-.prepared-no-stock-mark {
-    font-weight: bold;
+
+
+.derivated-sku-information-img {
+    width: 1.2rem; display: flex;
 }
 
-.prepared-no-stock-mark i{
+.order-product-mark {
+    font-weight: bold;
+    display: flex; 
+    align-items: center; 
+    gap: 0.1rem;
+}
+
+.order-product-mark i{
+    font-size: 1.2rem;
     font-style: normal;
+    font-weight: normal;
+}
+
+.critical-sign{
+    color: rgb(238, 14, 10);
+}
+
+.warning-sign{
     color: rgb(255, 149, 0);
 }
+
+
+
 
 /*label-scan-modal*/
 #label-scan-modal .modal-content {

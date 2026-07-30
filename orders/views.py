@@ -280,8 +280,10 @@ def order_group(request, id):
     prepared_orders_count = group_orders.filter(status='prepared').count()
     total_orders_count = group_orders.count()
 
-    #products_sku_set = product.objects.values_list('sku', flat=True)
-    #derivated_skus_set = derivated_sku.objects.values_list('sku', flat=True)
+    products_sku_set = product.objects.values_list('sku', flat=True)
+    derivated_skus_set = derivated_sku.objects.values_list('sku', flat=True)
+    out_of_stock_skus_set = product.objects.filter(stock=0).values_list('sku', flat=True)
+    out_of_stock_derivated_skus_set = derivated_sku.objects.filter(local_product__stock=0).values_list('sku', flat=True)
 
 
 
@@ -312,8 +314,10 @@ def order_group(request, id):
         'group_orders': group_orders,
         'prepared_orders_count': prepared_orders_count,
         'total_orders_count': total_orders_count,
-        #'products_sku_set': products_sku_set,
-        #'derivated_skus_set': derivated_skus_set,
+        'products_sku_set': products_sku_set,
+        'derivated_skus_set': derivated_skus_set,
+        'out_of_stock_skus_set': out_of_stock_skus_set,
+        'out_of_stock_derivated_skus_set': out_of_stock_derivated_skus_set,
     }
 
     #Si es un get request de un elemento con atributos HTMX
