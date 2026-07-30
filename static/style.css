@@ -700,13 +700,13 @@ nav li:hover {
     font-weight: bold;
 }
 
-.group-order-processed-status {
-    color: #56e907;
+.group-order-prepared-status {
+    color: #3cd175;
     font-weight: bold;
 }
 
-.group-order-dispatched-status {
-    color: #09f363;
+.group-order-finalized-status { 
+    color: #469a19;
     font-weight: bold;  
 }
 

@@ -15,13 +15,13 @@
     {% include 'orders/partials/group_general_information.html' %}
 </div>
 
-{% if order_group_instance.status == 'dispatched' %}
+{% if order_group_instance.status == 'finalized' %}
     <h3>Datos de finalización</h3>
     <div id = 'order-group-courier-information'>
         <p><b>Nombre despachador: </b>{{ order_group_instance.courier_name }}</p>
         <p><b>Patente despachador: </b>{{ order_group_instance.courier_license_plate }}</p>
-        <p><b>Finalizado por: </b>{{ order_group_instance.dispatched_by }}</p>
-        <p><b>Fecha/hora: </b>{{ order_group_instance.dispatched_date_time }}</p>
+        <p><b>Finalizado por: </b>{{ order_group_instance.finalized_by }}</p>
+        <p><b>Fecha/hora: </b>{{ order_group_instance.finalized_date_time }}</p>
         <div id="manifest-image-container" >
             <img id="manifest-image" src="{{order_group_instance.manifest_image.url}}" alt="manifest-image">
         </div>
@@ -32,7 +32,7 @@
     <button id = "process-order-group-modalBtn" name="process-order-group">Procesar Grupo</button>
 {% endif %}
 
-{% if order_group_instance.status == 'processed' %}
+{% if order_group_instance.status == 'prepared' %}
     <a href="{% url 'orders:finish_order_group' order_group_instance.id %}"><button>Finalizar Grupo</button></a>
 {% endif %}
 

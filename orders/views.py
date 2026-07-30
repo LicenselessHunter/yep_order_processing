@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_not_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import F, Min, Count, Q #Min() function is used to find the minimun value of a particular field
 from .models import order, marketplace, orders_group, order_product
@@ -13,6 +14,21 @@ from django.urls import reverse
 from django.contrib import messages
 import json
 
+
+@csrf_exempt 
+@require_POST #Decorator to require that a view only accepts the POST method.
+@login_not_required
+def ml_webhook(request): #Este view recibe las notificaciones de mercado libre, para luego ser procesados asincrónicamente.
+
+    notification_data = json.loads(request.body)
+
+    async_task('orders.async_functions.process_notification', notification_data) #Aquí se van a procesar las notificaciones de manera asincrónica y paralela.
+
+    return HttpResponse(status=200) #Se debe responder rapidamente a mercado libre con una respuesta '200' (En menos de 0.5 segundos) o mercado libre va a desactivar las notificaciones por 'fallback'
+
+# ML no envía CSRF token. Sin @csrf_exempt, Django rechazaría todos los webhooks de ML con un 403 Forbidden porque no incluyen el token 
+
+#A good example where @csrf_exempt is used is to build a webhook, that will receive informations from another site via a POST request. You then must be able to receive data even if it has no csrf token. *Quizás se podría agregar seguridad a esto.
 
 
 
@@ -134,21 +150,6 @@ def scan_product_ean(request, id):
 
     return render(request, 'orders/partials/scanned_order.html', context)
 
-@csrf_exempt 
-@require_POST #Decorator to require that a view only accepts the POST method.
-def ml_webhook(request): #Este view recibe las notificaciones de mercado libre, para luego ser procesados asincrónicamente.
-
-    notification_data = json.loads(request.body)
-
-    async_task('orders.async_functions.process_notification', notification_data) #Aquí se van a procesar las notificaciones de manera asincrónica y paralela.
-
-    return HttpResponse(status=200) #Se debe responder rapidamente a mercado libre con una respuesta '200' (En menos de 0.5 segundos) o mercado libre va a desactivar las notificaciones por 'fallback'
-
-# ML no envía CSRF token. Sin @csrf_exempt, Django rechazaría todos los webhooks de ML con un 403 Forbidden porque no incluyen el token 
-
-#A good example where @csrf_exempt is used is to build a webhook, that will receive informations from another site via a POST request. You then must be able to receive data even if it has no csrf token. *Quizás se podría agregar seguridad a esto.
-
-
 
 def orders(request, slug):
     marketplace_instance = marketplace.objects.get(slug=slug)
@@ -250,14 +251,14 @@ def orders(request, slug):
 
 
     if request.method == 'POST' and 'collect_prepare_btn' in request.POST:
-        group = orders_group.objects.create(marketplace=marketplace_instance, logistic_type='collect')
+        group = orders_group.objects.create(marketplace=marketplace_instance, logistic_type='collect', created_by = request.user)
         collect_ready_to_ship.update(orders_group=group, status='preparing')
         messages.success(request, 'Grupo de pedidos iniciado con éxito.')
         return redirect('orders:order_group', id=group.id)
 
 
     if request.method == 'POST' and 'flex_prepare_btn' in request.POST:
-        group = orders_group.objects.create(marketplace=marketplace_instance, logistic_type='flex')
+        group = orders_group.objects.create(marketplace=marketplace_instance, logistic_type='flex', created_by = request.user)
         flex_ready_to_ship.update(orders_group=group, status='preparing')
         messages.success(request, 'Grupo de pedidos iniciado con éxito.')
         return redirect('orders:order_group', id=group.id)
@@ -289,7 +290,7 @@ def order_group(request, id):
 
     if request.method == 'POST' and 'confirm-order-processing' in request.POST:
         
-        if order_group_instance.status == 'processed' or prepared_orders_count == 0:
+        if order_group_instance.status == 'prepared' or prepared_orders_count == 0:
             messages.error(request, 'No puedes procesar este grupo.')
             return redirect('orders:order_group', id=order_group_instance.id)
         
@@ -302,11 +303,12 @@ def order_group(request, id):
                     order_instance.status = 'not_prepared'
                 order_instance.save()
 
-        order_group_instance.status = 'processed'
-        order_group_instance.processed_date_time = timezone.now()
+        order_group_instance.status = 'prepared'
+        order_group_instance.prepared_date_time = timezone.now()
+        order_group_instance.prepared_by = request.user
         order_group_instance.save()
 
-        messages.success(request, 'Grupo procesado con éxito.')
+        messages.success(request, 'Grupo preparado con éxito.')
         return redirect('orders:order_group', id=order_group_instance.id)
 
     context = {
@@ -331,7 +333,7 @@ def order_group(request, id):
 def finish_order_group(request, group_id):
     group_instance = get_object_or_404(orders_group, id=group_id)
 
-    if group_instance.status != 'processed':
+    if group_instance.status != 'prepared':
         messages.error(request, f'No puedes finalizar este grupo')
         return redirect('orders:order_group', id=group_instance.id)
 
@@ -341,9 +343,9 @@ def finish_order_group(request, group_id):
         if form.is_valid():
             form.save()
 
-            group_instance.status = 'dispatched'
-            group_instance.dispatched_date_time = timezone.now()
-            group_instance.dispatched_by = request.user
+            group_instance.status = 'finalized'
+            group_instance.finalized_date_time = timezone.now()
+            group_instance.finalized_by = request.user
             group_instance.save()
 
             messages.success(request, f'Grupo de órdenes correctamente finalizado')

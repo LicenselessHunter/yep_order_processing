@@ -76,6 +76,7 @@ def create_products_for_order(processing_order, order_items):
         order_product.objects.create(
             order=processing_order,
             sku_seller=item['item'].get('seller_sku', ''),
+            seller_product_name=item['item']['title'],
             sku_marketplace=item['item']['id'],
             quantity=item['quantity'],
         )

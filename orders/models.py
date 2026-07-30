@@ -41,21 +41,28 @@ class orders_group(models.Model):
     
     GROUP_STATUS = [
         ('in_progress', 'in_progress'),
-        ('processed', 'processed'),
-        ('dispatched', 'dispatched'),
+        ('prepared', 'prepared'),
+        ('finalized', 'finalized'),
     ]
 
     marketplace = models.ForeignKey(marketplace, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, blank=True, choices=GROUP_STATUS, default='in_progress')
     logistic_type = models.CharField(max_length=20, null=True, blank=True, choices=GROUP_LOGISTIC_TYPE)
-    creation_date_time = models.DateTimeField(auto_now_add=True)
-    processed_date_time = models.DateTimeField(null=True, blank=True)
-    
+
     courier_name = models.CharField(max_length=60)
     courier_license_plate = models.CharField(max_length=6)
     manifest_image = models.ImageField()
-    dispatched_date_time = models.DateTimeField(null=True, blank=True)
-    dispatched_by = models.ForeignKey(User, on_delete=models.SET_DEFAULT, default=None, blank=True, null=True)
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_DEFAULT, default=None, blank=True, null=True, related_name='created_by')
+    creation_date_time = models.DateTimeField(auto_now_add=True)
+    
+    prepared_by = models.ForeignKey(User, on_delete=models.SET_DEFAULT, default=None, blank=True, null=True, related_name='prepared_by')
+    prepared_date_time = models.DateTimeField(null=True, blank=True)
+
+    finalized_by = models.ForeignKey(User, on_delete=models.SET_DEFAULT, default=None, blank=True, null=True, related_name='finalized_by')
+    finalized_date_time = models.DateTimeField(null=True, blank=True)
+
+    #When a model has more than one ForeignKey, OneToOneField, or ManyToManyField pointing to the same other model, you must define related_name for at least one of these relationships. This is because Django automatically generates a default related_name (e.g. book_set) for reverse access, and if multiple relationships point to the same model, these default names would clash.
 
     def save(self, *args, **kwargs):
         if self.courier_license_plate:
@@ -103,6 +110,7 @@ class order(models.Model):
 class order_product(models.Model):
     order = models.ForeignKey(order, on_delete=models.CASCADE)
     sku_seller = models.CharField(max_length=100, blank=True)
+    seller_product_name = models.CharField(max_length=255, blank=True, null=True)
     sku_marketplace = models.CharField(max_length=100, blank=True)
     quantity = models.IntegerField(default=1)
     quantity_scanned = models.IntegerField(default=0)
