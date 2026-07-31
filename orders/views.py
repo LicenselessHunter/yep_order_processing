@@ -13,6 +13,8 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.contrib import messages
 import json
+from django_q.models import OrmQ
+
 
 
 @csrf_exempt 
@@ -162,6 +164,11 @@ def orders(request, slug):
     flex_ready_to_print = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='flex', status='ready_to_print')
     flex_ready_to_ship = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='flex', status='ready_to_ship')
 
+    products_sku_set = product.objects.values_list('sku', flat=True)
+    derivated_skus_set = derivated_sku.objects.values_list('sku', flat=True)
+    out_of_stock_skus_set = product.objects.filter(stock=0).values_list('sku', flat=True)
+    out_of_stock_derivated_skus_set = derivated_sku.objects.filter(local_product__stock=0).values_list('sku', flat=True)
+
 
     #En esta lista, se va a almacenar diccionarios con la data necesaria para renderizar las ordenes de cada tipo/status de mercado libre de hoy. Cada diccionario de la lista representa un grupo de data, en este caso hay un diccionario para colecta y otro para flex. Independiente del diccionario, todos usan la misma estructura html, esto se hace esencialmente para evitar escribir html redundante.
     #Cada diccionario contiene: 
@@ -235,7 +242,13 @@ def orders(request, slug):
 
     if request.method == 'POST' and 'update_today_orders' in request.POST:
 
-        async_task(f"orders.async_functions.manual_update_ml_orders")
+    
+        if OrmQ.objects.filter(task_name = 'mercado-libre-manual-update').exists():
+            messages.error(request, 'Ya hay una actualización manual en progreso.')
+            return redirect('orders:order_group', id=group.id) 
+
+        messages.success(request, 'Actualización de órdenes de mercado libre iniciado con éxito.')
+        async_task(f"orders.async_functions.manual_update_ml_orders", task_name='mercado-libre-manual-update')
 
 
 
@@ -271,6 +284,11 @@ def orders(request, slug):
         'flex_ready_to_print': flex_ready_to_print,
         'flex_ready_to_ship': flex_ready_to_ship,
         'organized_orders_dict': organized_orders_dict,
+        'products_sku_set': products_sku_set,
+        'derivated_skus_set': derivated_skus_set,
+        'out_of_stock_skus_set': out_of_stock_skus_set,
+        'out_of_stock_derivated_skus_set': out_of_stock_derivated_skus_set,
+
     }
 
     return render(request, 'orders/orders.html', context)

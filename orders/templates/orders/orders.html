@@ -39,16 +39,16 @@
 
 {% block content %}
 
-<h1>Órdenes de {{marketplace_instance}}</h1>
+<h1 class="orders-section-title">Órdenes de {{marketplace_instance}}</h1>
 
 <div class="order_totals_container">
     <div id="ml_collect_totals" class="order_totals">
         <h3>Colecta</h3>
 
         {% if collect_ready_to_print.count != 0 %}
-            <p id="toggle_collect_print">Etiquetas por imprimir <span>{{ collect_ready_to_print.count }}</span></p>
+            <p id="toggle_collect_print">Etiquetas por imprimir <span> {{ collect_ready_to_print.count }}</span></p>
         {% else %}
-            <p>Etiquetas por imprimir <span>{{ collect_ready_to_print.count }}</span></p>
+            <p>Etiquetas por imprimir <span> {{ collect_ready_to_print.count }}</span></p>
         {% endif %}
 
         {% if collect_ready_to_ship.count != 0 %}
@@ -85,15 +85,46 @@
             <div class="order_card">
                 <div class="order_header">
                     <span class="order_id">#{{ order.order_id }}</span>
-                    <span>{{ order.creation_date_time }}</span>
-                    <span>{{ order.client_nickname }}</span>
+                    <span style="text-align: right;">{{ order.creation_date_time }}</span>
+                    <!--<span>{{ order.client_nickname }}</span>-->
                 </div>
                 <div class="order_products_container">
                     {% for product in order.order_product_set.all %}
+                        <!--
+                        <div id = 'orders-mark-div'>
+                            {% if product.sku_seller in products_sku_set or product.sku_seller in derivated_skus_set %}
+                            
+                                {% if product.sku_seller in derivated_skus_set %}
+                                    <div style = "padding-block: 0.2rem; padding-inline: 0.2rem; background-color: #999696;" class = "order-product-mark"><div class = "derivated-sku-information-img"><img src="{% static 'images/alert-circle.svg' %}" alt="information-circle"></div> <p>Sku derivado</p></div>
+                                {% endif %}
+
+                                {% if product.sku_seller in out_of_stock_skus_set or product.sku_seller in out_of_stock_derivated_skus_set %}
+                                    <div style = "padding-block: 0.2rem; padding-inline: 0.2rem; background-color: #eb9c9c;" class = "order-product-mark"><i class="critical-sign">&#9888;</i> <p>Producto sin stock</p></div>
+
+                                {% endif %}
+
+                            {% else %}
+                                <p style = "padding-block: 0.2rem; padding-inline: 0.2rem; background-color: #eb9c9c;" class = "order-product-mark"><i class="critical-sign">&#9888;</i> Producto no registrado</p>
+                            {% endif %}
+                        </div>
+                        -->
+                        
                         <div class="order_product_row">
-                            <span>SKU vendedor: {{ product.sku_seller }}</span>
-                            <span>SKU marketplace: {{ product.sku_marketplace }}</span>
-                            <span>{{ product.quantity }} unidad(es)</span>
+                            <div class="order_product_cell">
+                                <i>SKU:</i>
+                                <span style="font-weight: bold; font-size: 1.2rem;">{{ product.sku_seller }}</span>
+                                <span>{{ product.sku_marketplace }}</span>
+                            </div>
+
+                            <div id="order_product_name_cell" class="order_product_cell">
+                                <i>Nombre:</i>
+                                <span style="font-size: 1.1rem;">{{ product.seller_product_name }}</span>
+                            </div>
+
+                            <div id="order_product_quantity_cell" class="order_product_cell">
+                                <span>{{ product.quantity }} </span>
+                                <span>{% if product.quantity > 1 %}unidades{% else %} unidad {% endif %}</span>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
