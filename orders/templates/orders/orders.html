@@ -5,41 +5,50 @@
 
 {% block header_btns %}
 
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" name="update_today_orders">Actualizar</button>
-</form>
-
-{% if collect_ready_to_print.count != 0 %}
-    <button id="collect_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir</button>
-{% endif %}
-
-{% if flex_ready_to_print.count != 0 %}
-    <button id="flex_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir</button>
-{% endif %}
-
-
-
-{% if collect_ready_to_ship.count != 0 %}
-    <form method="POST">   
+{% if not update_log_in_progress %}
+    <form method="post">
         {% csrf_token %}
-        <button id="collect_prepare_btn" class="prepare_btn" type="submit" name="collect_prepare_btn" style="display: none;">Preparar</button>
+        <button type="submit" name="update_today_orders">Actualizar</button>
     </form>
-{% endif %}
 
-{% if flex_ready_to_ship.count != 0 %}
-    <form method="POST">
-        {% csrf_token %}
-        <button id="flex_prepare_btn" class="prepare_btn" type="submit" name="flex_prepare_btn" style="display: none;">Preparar</button>
-    </form> 
-{% endif %}
 
+    {% if collect_ready_to_print.count != 0 %}
+        <button id="collect_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir</button>
+    {% endif %}
+
+    {% if flex_ready_to_print.count != 0 %}
+        <button id="flex_print_btn_modal" class="print_btn_modal" type="submit" style="display: none;">Imprimir</button>
+    {% endif %}
+
+
+    {% if collect_ready_to_ship.count != 0 %}
+        <form method="POST">   
+            {% csrf_token %}
+            <button id="collect_prepare_btn" class="prepare_btn" type="submit" name="collect_prepare_btn" style="display: none;">Preparar</button>
+        </form>
+    {% endif %}
+
+    {% if flex_ready_to_ship.count != 0 %}
+        <form method="POST">
+            {% csrf_token %}
+            <button id="flex_prepare_btn" class="prepare_btn" type="submit" name="flex_prepare_btn" style="display: none;">Preparar</button>
+        </form> 
+    {% endif %}
+{% endif %}
 
 {% endblock %}
 
 {% block content %}
 
+{% if update_log_in_progress %}
+    <div id="manual-orders-update-msg">
+        <img src="{% static 'images/alert-circle.svg' %}" alt="information-circle"> 
+        <p style="margin-block: 0.5rem;">Actualización manual de órdenes en progreso.</p>
+    </div>
+{% endif %}
+
 <h1 class="orders-section-title">Órdenes de {{marketplace_instance}}</h1>
+
 
 <div class="order_totals_container">
     <div id="ml_collect_totals" class="order_totals">
@@ -74,7 +83,9 @@
         {% endif %}
     
     </div>
+    
 </div>
+
 
 <h2 class="orders_title"></h2>
 
@@ -90,7 +101,6 @@
                 </div>
                 <div class="order_products_container">
                     {% for product in order.order_product_set.all %}
-                        <!--
                         <div id = 'orders-mark-div'>
                             {% if product.sku_seller in products_sku_set or product.sku_seller in derivated_skus_set %}
                             
@@ -107,7 +117,6 @@
                                 <p style = "padding-block: 0.2rem; padding-inline: 0.2rem; background-color: #eb9c9c;" class = "order-product-mark"><i class="critical-sign">&#9888;</i> Producto no registrado</p>
                             {% endif %}
                         </div>
-                        -->
                         
                         <div class="order_product_row">
                             <div class="order_product_cell">

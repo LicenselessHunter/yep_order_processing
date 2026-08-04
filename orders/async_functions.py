@@ -1,7 +1,7 @@
 import json
 from django.conf import settings
 from datetime import date, datetime
-from .models import marketplace, order, order_product
+from .models import marketplace, order, order_product, direct_orders_update_log
 from .ml_api_resources import search_orders, get_order_data, get_pack_data, get_shipping_data, get_shipping_items, get_max_dispatch_time, get_shipment_label, get_user_data, create_api_error
 from django.db import transaction #module that provides a few ways to control how database transactions are managed.
 #Django’s default transaction behavior:
@@ -343,6 +343,8 @@ def process_notification(notification_data):
 
 def manual_update_ml_orders():
 
+    marketplace_instance = marketplace.objects.get(slug='mercado-libre')
+    
     offset_value = 0
     orders_response = search_orders(offset_value) #El recurso 'Buscar Ordenes' de la API de mercado libre, va a traer las ordenes validas para ingresar y actualizar dentro de este software. Hay que tener en cuenta que este recurso NO trae las órdenes PACK de manera exlicita, pero si trae las ordenes individuales contenidas en estas, por lo que se pueden obtener los PACKs a través de estas.
 
@@ -395,7 +397,11 @@ def manual_update_ml_orders():
         if not orders_dict['results']: #Si el recurso 'Buscar Órdenes' de la API de mercado libre entrego una lista de órdenes vacía.
             break
 
-    order.objects.filter(marketplace=marketplace.objects.get(slug='mercado-libre')).exclude(order_id__in=valid_orders_ids).delete() #Finalmente, se eliminan las ordenes dentro del sistema que no entrego el recurso de la api de mercado libre "buscar ordenes".
+    order.objects.filter(marketplace=marketplace_instance).exclude(order_id__in=valid_orders_ids).delete() #Finalmente, se eliminan las ordenes dentro del sistema que no entrego el recurso de la api de mercado libre "buscar ordenes".
+
+    orders_update_log = direct_orders_update_log.objects.get(marketplace=marketplace_instance, finished=False)
+    orders_update_log.finished=True
+    orders_update_log.save()
 
     
 def print_ml_orders(organized_ml_orders):

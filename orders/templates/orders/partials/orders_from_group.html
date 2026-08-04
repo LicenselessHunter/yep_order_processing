@@ -25,7 +25,7 @@
                 {% for product in order.order_product_set.all %}
                     <div class="product-cell-data">
 
-                        <div>
+                        <div style="margin-bottom: 0.4rem;">
 
                             {% if product.sku_seller in products_sku_set or product.sku_seller in derivated_skus_set %}
                             
@@ -47,7 +47,7 @@
                             {% endif %}
                         </div>
 
-                        <p>{{ product.sku_seller }}</p>
+                        <p style="font-size: 1.3rem; font-weight: bold;">{{ product.sku_seller }}</p>
                         <p>{{ product.seller_product_name }}</p>
                     </div>
                     <p id = "product-counter-cell" class="product-cell-data">{{ product.quantity_scanned }} / {{ product.quantity }}</p>

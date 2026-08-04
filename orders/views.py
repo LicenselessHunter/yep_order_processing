@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_not_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import F, Min, Count, Q #Min() function is used to find the minimun value of a particular field
-from .models import order, marketplace, orders_group, order_product
+from .models import order, marketplace, orders_group, order_product, direct_orders_update_log
 from .forms import finish_orders_group_form
 from products.models import product, derivated_sku
 from django_q.tasks import async_task
@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.contrib import messages
 import json
 from django_q.models import OrmQ
-
+from django.db import transaction
 
 
 @csrf_exempt 
@@ -156,7 +156,11 @@ def scan_product_ean(request, id):
 def orders(request, slug):
     marketplace_instance = marketplace.objects.get(slug=slug)
     today = timezone.now()
-    #today = date.today()
+
+    try:
+        update_log_in_progress = direct_orders_update_log.objects.get(marketplace=marketplace_instance, finished=False)
+    except:
+        update_log_in_progress = None
 
     #Estos son los contadores totales para la ordenes de mercado libre, se van a mostrar en el template.
     collect_ready_to_print = order.objects.filter(estimated_pickup_time__lte=today, marketplace=marketplace_instance, logistic_type='collect', status='ready_to_print')
@@ -242,17 +246,28 @@ def orders(request, slug):
 
     if request.method == 'POST' and 'update_today_orders' in request.POST:
 
-    
-        if OrmQ.objects.filter(task_name = 'mercado-libre-manual-update').exists():
-            messages.error(request, 'Ya hay una actualización manual en progreso.')
-            return redirect('orders:order_group', id=group.id) 
+        with transaction.atomic():
+            # Bloquea la fila de este marketplace hasta que termine la transacción.
+            # Así, si dos requests llegan casi al mismo tiempo, la segunda espera
+            # a que la primera haga commit antes de poder leer/escribir.
+            locked_marketplace = marketplace.objects.select_for_update().get(pk=marketplace_instance.pk)
+
+            if direct_orders_update_log.objects.filter(marketplace=locked_marketplace, finished=False).exists():
+                messages.error(request, 'Ya hay una actualización manual en progreso.')
+                return redirect('orders:orders', slug=marketplace_instance.slug)
+
+            direct_orders_update_log.objects.create(marketplace=locked_marketplace)
 
         messages.success(request, 'Actualización de órdenes de mercado libre iniciado con éxito.')
-        async_task(f"orders.async_functions.manual_update_ml_orders", task_name='mercado-libre-manual-update')
-
+        async_task(f"orders.async_functions.manual_update_ml_orders")
+        return redirect('orders:orders', slug=marketplace_instance.slug)
 
 
     if request.method == 'POST' and 'print_collect_orders' in request.POST:
+
+        if direct_orders_update_log.objects.filter(marketplace=marketplace_instance, finished=False).exists():
+            messages.error(request, 'No puedes imprimir cuando hay una actualización manual de órdenes en progreso.')
+            return redirect('orders:orders', slug=marketplace_instance.slug)
 
         async_task(f"orders.async_functions.print_ml_orders", organized_ml_collect)
 
@@ -260,10 +275,20 @@ def orders(request, slug):
 
     if request.method == 'POST' and 'print_flex_orders' in request.POST:
 
+        if direct_orders_update_log.objects.filter(marketplace=marketplace_instance, finished=False).exists():
+            messages.error(request, 'No puedes imprimir cuando hay una actualización manual de órdenes en progreso.')
+            return redirect('orders:orders', slug=marketplace_instance.slug)
+
         async_task(f"orders.async_functions.print_ml_orders", organized_ml_flex)
 
 
     if request.method == 'POST' and 'collect_prepare_btn' in request.POST:
+        
+        if direct_orders_update_log.objects.filter(marketplace=marketplace_instance, finished=False).exists():
+            messages.error(request, 'No puedes preparar pedidos cuando hay una actualización manual de órdenes en progreso.')
+            return redirect('orders:orders', slug=marketplace_instance.slug)
+
+        
         group = orders_group.objects.create(marketplace=marketplace_instance, logistic_type='collect', created_by = request.user)
         collect_ready_to_ship.update(orders_group=group, status='preparing')
         messages.success(request, 'Grupo de pedidos iniciado con éxito.')
@@ -271,10 +296,16 @@ def orders(request, slug):
 
 
     if request.method == 'POST' and 'flex_prepare_btn' in request.POST:
+
+        if direct_orders_update_log.objects.filter(marketplace=marketplace_instance, finished=False).exists():
+            messages.error(request, 'No puedes preparar pedidos cuando hay una actualización manual de órdenes en progreso.')
+            return redirect('orders:orders', slug=marketplace_instance.slug)
+
         group = orders_group.objects.create(marketplace=marketplace_instance, logistic_type='flex', created_by = request.user)
         flex_ready_to_ship.update(orders_group=group, status='preparing')
         messages.success(request, 'Grupo de pedidos iniciado con éxito.')
         return redirect('orders:order_group', id=group.id)
+
 
     context = {
         'marketplace_instance': marketplace_instance,
@@ -288,7 +319,7 @@ def orders(request, slug):
         'derivated_skus_set': derivated_skus_set,
         'out_of_stock_skus_set': out_of_stock_skus_set,
         'out_of_stock_derivated_skus_set': out_of_stock_derivated_skus_set,
-
+        'update_log_in_progress': update_log_in_progress,
     }
 
     return render(request, 'orders/orders.html', context)

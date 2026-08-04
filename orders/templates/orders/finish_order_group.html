@@ -5,16 +5,18 @@
 
 {% block content %}
 
-<h1>Finalizar grupo de órdenes</h1>
+<div id = "finish-order-group-container">
+    <h1 id="finish-order-form-title">Finalizar grupo de órdenes</h1>
 
-<div class = 'order-group-finish-div'>
     <form method="POST" class = 'order-group-finish-form' enctype="multipart/form-data">
+
         {% csrf_token %}
         {% for field in form %}
             {% if field.name == 'manifest_image' %}
                 <p>{{ field.label_tag }}{{ field }}</p>
-                <img id="manifest-image-preview" src="{% static 'images/default-image.jpg' %}" alt="default-image">
-
+                <div>
+                    <img id="manifest-image-preview" src="{% static 'images/default-image.jpg' %}" alt="default-image">
+                </div>
             {% else %}
                 <p>{{ field.label_tag }}{{ field }}</p>
                 
@@ -32,6 +34,7 @@
         
     </form>
 </div>
+
 
 {% endblock %}
 

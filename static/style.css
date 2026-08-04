@@ -82,13 +82,13 @@ header {
 .success {
     background-color: #aef3cf;
     color: #065f46;
-    border: 1px solid #a7f3d0;
+    border: 0.1rem solid #a7f3d0;
 }
 
 .error {
     background-color: #fee2e2;
     color: #991b1b;
-    border: 1px solid #fecaca;
+    border: 0.1rem solid #fecaca;
 }
 
 @media (min-width: 40em){
@@ -348,6 +348,24 @@ nav li:hover {
     /*width: 80vw;*/
 }
 
+
+#manual-orders-update-msg {
+    background-color: #53e999; 
+    padding-block: 0.3rem; 
+    padding-inline: 0.4rem; 
+    color:#0c6335; 
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    gap: 0.2rem;
+}
+
+#manual-orders-update-msg p {
+    margin-block: 0.5rem;
+}
+
+
+
 .order_totals {
     padding: 0.6rem;
     background-color: rgb(161, 156, 156);
@@ -442,19 +460,19 @@ nav li:hover {
     font-size: 1.3rem;
 }
 
-/*
+
 #orders-mark-div {
     display: flex;
     flex-direction: column;
+    gap: 0.2rem;
 }
 
 #orders-mark-div p{
     margin: 0;
 }
-*/
 
 @media (min-width: 640px){
-    .order_totals_container, .orders_title, .orders_container {
+    #manual-orders-update-msg, .order_totals_container, .orders_title, .orders_container {
         margin-right: 2rem;
     }
     
@@ -471,7 +489,7 @@ nav li:hover {
 }
 
 @media (min-width: 1090px){
-    .orders-section-title, .order_totals_container, .orders_title, .orders_container {
+    #manual-orders-update-msg, .orders-section-title, .order_totals_container, .orders_title, .orders_container {
         margin-left: 3rem;
         margin-right: 4rem;
     }
@@ -821,6 +839,15 @@ nav li:hover {
 
 
 /*---- ORDERS GROUP CSS ----*/
+
+#order-group-general-information p {
+    margin-block: 0.5rem;
+}
+
+#order-group-courier-information p {
+    margin-block: 0.5rem;
+}
+
 #group-orders-cotainer {
     display: flex; 
     flex-direction: column; 
@@ -868,22 +895,22 @@ nav li:hover {
 }
 
 
-
+/*
 #order-group-courier-information{
     display: grid;
     grid-template-columns: 1fr 1fr;
     max-width: 60rem;
 }
+*/
 
 #manifest-image-container {
+    /*
     place-self: center;
     grid-column-end: span 2;
+    */
     width: 10rem;
 }
 
-#manifest-image {
-    max-width: 100%;
-}
 
 
 
@@ -1099,6 +1126,7 @@ nav li:hover {
 
 
 /*---- FINISH_ORDER_GROUP CSS ----*/
+/*
 .order-group-finish-div {
     background-color: #3b3939;
     color: white;
@@ -1106,24 +1134,46 @@ nav li:hover {
     border: 0.3rem solid rgb(161, 156, 156);
     border-radius: 2%;
 }
+*/
 
+#finish-order-group-container {
+    /*max-width: 30rem;*/
+}
+
+#finish-order-form-title{
+    background-color: #3b3939;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 1rem;
+    border: 0.3rem solid rgb(161, 156, 156);
+    margin-block: 0.8rem;
+}
 
 .order-group-finish-form {
     display: grid;
     gap: 0.5rem;
+    background-color: #3b3939;
+    color: white;
+    padding: 1.2rem;
+    border: 0.3rem solid rgb(161, 156, 156);
+    border-radius: 2%;
 }
+
+.order-group-finish-form > p:last-child {
+    justify-self: center;
+}
+
+
 
 .order-group-finish-form p {
     margin: 0;
 }
 
 .order-group-finish-form input {
-        width: 100%;
+    width: 100%;
 }
 
-.order-group-finish-form img {
-    max-width: 100%;
-}
+
 
 .order-group-finish-form button {
     justify-self: center;
@@ -1134,4 +1184,17 @@ nav li:hover {
     background-color: #e95555;
     color: #f5e9e9;
     border: 0.1rem solid #fecaca;
+}
+
+@media (min-width: 640px){
+    #finish-order-group-container{
+        margin-right: 3rem;
+    }
+}
+
+@media (min-width: 1090px){
+    #finish-order-group-container{
+        max-width: 30rem;
+        margin-inline: 8rem;
+    }
 }

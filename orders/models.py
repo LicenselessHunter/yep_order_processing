@@ -121,6 +121,15 @@ class order_product(models.Model):
         return f"{self.order} - {self.sku_seller} (x{self.quantity})"
 
 
+class direct_orders_update_log(models.Model):
+    marketplace = models.ForeignKey(marketplace, on_delete=models.CASCADE)
+    update_date_time = models.DateTimeField(auto_now_add=True, null=True) #auto_now_add --> automatically set the field to the current date and time when the model instance is first created.
+    finished = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.marketplace} - Finished: {self.finished} - {self.update_date_time}"
+
+
 class api_error(models.Model):
     api_status_code = models.IntegerField()
     api_response_text = models.TextField()
