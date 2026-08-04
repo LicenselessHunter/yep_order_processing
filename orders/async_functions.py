@@ -139,26 +139,28 @@ def process_order(order_data, order_type):
                 print('La orden no tiene status paid o released')
                 print('')
                 return
-                
-            #DETERMINAR STATUS DEL SHIPPING
-            shipping_response = get_shipping_data(shipping_id)
-            if shipping_response.status_code != 200:
-                create_api_error(shipping_response)
-                return
-            shipping_dict = json.loads(shipping_response.text)
+            
+            #Si la órden existente no está vinculada a un grupo de órdenes, entonces se va a verificar estado logístico para determinar status 'ready_to_print' o 'ready_to_ship'. Esto va a evitar que el programa elimine órdenes que estén vinculadas a grupos de órdenes cuando tengan un estado logístico no reconocible por este software
+            if processing_order.orders_group is None:
+                #DETERMINAR STATUS DEL SHIPPING
+                shipping_response = get_shipping_data(shipping_id)
+                if shipping_response.status_code != 200:
+                    create_api_error(shipping_response)
+                    return
+                shipping_dict = json.loads(shipping_response.text)
 
-            shipping_status = inspect_shipping_status(shipping_dict)
-            if not shipping_status:
-                processing_order.delete()
-                print('Orden descartada por status no valido')
-                print('')
-                return
+            
+                shipping_status = inspect_shipping_status(shipping_dict)
+                if not shipping_status:
+                    processing_order.delete()
+                    print('Orden descartada por status no valido')
+                    print('')
+                    return
 
-
-            #SE ACTUALIZA EL STATUS DE LA ORDEN SI ES NECESARIO
-            if processing_order.status != shipping_status:
-                processing_order.status = shipping_status
-                processing_order.save()
+                #SE ACTUALIZA EL STATUS DE LA ORDEN REGISTRADA SI ES NECESARIO
+                if processing_order.status != shipping_status:
+                    processing_order.status = shipping_status
+                    processing_order.save()
 
             print('Orden actualizada con exito.')
             print('')
