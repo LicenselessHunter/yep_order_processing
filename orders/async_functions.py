@@ -399,7 +399,7 @@ def manual_update_ml_orders():
         if not orders_dict['results']: #Si el recurso 'Buscar Órdenes' de la API de mercado libre entrego una lista de órdenes vacía.
             break
 
-    order.objects.filter(marketplace=marketplace_instance).exclude(order_id__in=valid_orders_ids).delete() #Finalmente, se eliminan las ordenes dentro del sistema que no entrego el recurso de la api de mercado libre "buscar ordenes".
+    order.objects.filter(marketplace=marketplace_instance).exclude(order_id__in=valid_orders_ids).exclude(orders_group__isnull=False).delete() #Finalmente, se eliminan las ordenes dentro del sistema que no entrego el recurso de la api de mercado libre "buscar ordenes", exceptuando las que estén vinculadas a un orders_group.
 
     orders_update_log = direct_orders_update_log.objects.get(marketplace=marketplace_instance, finished=False)
     orders_update_log.finished=True

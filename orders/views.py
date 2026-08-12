@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_not_required
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import F, Min, Count, Q #Min() function is used to find the minimun value of a particular field
+from django.db.models import F, Min, Count, Q, Subquery, OuterRef, Window #Min() function is used to find the minimun value of a particular field
+from django.db.models.functions import Coalesce
 from .models import order, marketplace, orders_group, order_product, direct_orders_update_log
 from .forms import finish_orders_group_form
 from products.models import product, derivated_sku
@@ -33,125 +34,52 @@ def ml_webhook(request): #Este view recibe las notificaciones de mercado libre, 
 #A good example where @csrf_exempt is used is to build a webhook, that will receive informations from another site via a POST request. You then must be able to receive data even if it has no csrf token. *Quizás se podría agregar seguridad a esto.
 
 
+def organize_readyToPrint_orders(queryset):
 
-# Create your views here.
-#Este view va a recibir data a través de una solicitud POST de javascript Fetch Api
-@require_POST #Decorator to require that a view only accepts the POST method.
-def scanned_order_label(request, group_id):
-    group_instance = get_object_or_404(orders_group, id=group_id)
-
-    data = json.loads(request.body)
-    label_data = data.get('label_data_json')
-    
-    #Si es que viene de un ML Flex
-    try:
-        label_data = json.loads(label_data)
-        shipping_id = label_data['id']
-
-    #Si es que viene de un ML Colecta
-    except:
-        shipping_id = label_data
-
-    '''
-    if group_instance.logistic_type == 'collect':
-        shipping_id = label_data
-
-    elif group_instance.logistic_type == 'flex':
-        #print(label_data)
-        label_data = json.loads(label_data)
-
-        try:
-            shipping_id = label_data['id']
-
-        except:
-            return JsonResponse({'error': 'Esta etiqueta no corresponde a un pedido flex'})
-    '''
-
-    try:
-        order_instance = order.objects.get(shipping_id=shipping_id)
-
-    except order.DoesNotExist:
-        return JsonResponse({'error': 'No se encontro la orden vinculada a esta etiqueta dentro de este sistema'})
-
-    else:
-        if order_instance.orders_group != group_instance:
-                return JsonResponse({
-                    'error': 'La orden vinculada a esta etiqueta no pertencece al grupo de pedido actual'})
-
-        redirect_url = reverse('orders:prepare_order', kwargs={'group_id': group_id, 'id': order_instance.id})
-        return JsonResponse({'redirect_url': redirect_url})
+    #Subquery para buscar si el 'sku_seller' es directamente un SKU Base (product.sku)
+    product_sku_subquery = product.objects.filter(
+        sku=OuterRef('order_product__sku_seller')
+        #Use 'OuterRef' when a queryset in a Subquery needs to refer to a field from the outer query or its transform. It acts like an F expression except that the check to see if it refers to a valid field isn’t made until the outer queryset is resolved. 
+        #En este caso, va al modelo product y busca el registro que haga match con el order_product__sku_seller de la orden actual.
+    ).values('sku')
+    #.values() --> Convierte el queryset en un diccionario.
+    #Con '.values('sku')' nos aseguramos de recolectar el valor de una sola columna, en este caso, el sku del objeto 'product' que tiene campo 'sku' igual al campo 'sku_seller' del 'order_product'.
 
 
-@require_POST #Decorator to require that a view only accepts the POST method.
-def scan_product_ean(request, id):
-    order_instance = order.objects.get(id=id)
-    group_instance = orders_group.objects.get(id=order_instance.orders_group.id)
-
-    scanned_ean = request.POST.get('barcode') #request.POST.get() is a method used to safely retrieve data submitted from an HTML form via an HTTP POST request.
-
-    try:
-        product_instance = product.objects.get(ean=scanned_ean)
-    except product.DoesNotExist:
-        response = HttpResponse('El código escaneado no está registrado en sistema', status=400)
-        return response
-
-    derivated_skus = derivated_sku.objects.filter(local_product=product_instance).values_list('sku', flat=True)
-    matching_skus = [product_instance.sku, *derivated_skus]
-    #El * es el operador de "unpacking" (desempaquetado) de Python. derivated_skus es un queryset/iterable (por values_list('sku', flat=True)) con cero o más strings de SKU. *derivated_skus expande esos elementos individualmente dentro de la lista 'matching_skus'.
-
-    #Sin desempaquetado (*):
-    #matching_skus --> ["YEP1015", ["YEP1015R", "YEP1015B"]]
-
-    #Con desempaquetado (*):
-    #matching_skus --> ["YEP1015", "YEP1015R", "YEP1015B"]
-
-    matching_order_products = order_product.objects.filter(order=order_instance, sku_seller__in=matching_skus) #Query que contiene los objetos 'order_product' ralacionado a la orden actual y en donde su campo 'sku_seller' esté contenido dentro de la lista 'matching_skus'. Este query va a contener el producto base de la orden y su skus derivados si es que existen.
-
-    order_product_instance = matching_order_products.filter(quantity_scanned__lt=F('quantity')).order_by('id').first() #Dentro del query recién creado, se va a tomar el 'order_product' que tenga su campo 'quantity_scanned' menor a su campo 'quantity'...
-
-    if order_product_instance is None: #En el caso en que el producto escaneado no esté relacionado a la orden
-        #En el caso en que el producto escaneado esté relacionado a la orden, pero ya fue completado (quantity_scanned=quantity).
-        if matching_order_products.exists():
-            response = HttpResponse('Este producto ya fue completado para esta orden', status=400)
-            return response
-
-        #En el caso en que el producto escaneado no esté relacionado a la orden.
-        response = HttpResponse('La orden actual no contiene el producto del código escaneado', status=400)
-        return response
-
-    if product_instance.stock == 0 and order_product_instance.prepared_without_stock == False:
-        response = HttpResponse(f'El producto {product_instance.sku} no tiene stock disponible', status=400)
-        #response['HX-Trigger'] = 'noStock'
-        response['No-Stock-product'] = json.dumps({'orderProductId': order_product_instance.id}) #Header personalizado del http request, aquí se pasará JSON con el id del 'order_product' sin stock. Esto se procesará en el archivo JS, dentro del evento 'htmx:responseError'.
-        return response
+    derivated_parent_sku_subquery = derivated_sku.objects.filter(
+        sku=OuterRef('order_product__sku_seller')
+    ).values('local_product__sku')
 
 
-    order_product_instance.quantity_scanned += 1
-    order_product_instance.save()
+    # Definir la expresión reutilizable para el SKU Base Normalizado
+    #Coalesce --> Accepts a list of at least two field names or expressions and returns the first non-null value (note that an empty string is not considered a null value). Each argument must be of a similar type, so mixing text and numbers will result in a database error. 
+    #Entonces, base_sku_expr va a ser igual al valor no nulo que encuentre al ejecutar lo que está dentro de 'Coealesce'.
+    base_sku_expr = Coalesce(
+        Subquery(product_sku_subquery),
+        Subquery(derivated_parent_sku_subquery),
+        'order_product__sku_seller'
+    )
 
-    if order_product_instance.prepared_without_stock == False:
-        product_instance.stock -= 1
-        product_instance.save()
+    return queryset.annotate(
+        #Se va a calcular un 'base_sku_expr' para cada 'order_product' asociado a la orden. Ya que se debe devolver una sola fila por orden, se va a usar Min(base_sku_expr) para recoger el primer base_sku_expr en orden alfabético.
+        base_sku=Min(base_sku_expr),
+        product_sku=Min('order_product__sku_seller'),
+        sku_group_count=Window(
+            expression=Count('id'), #Este 'expression' va a contar el total de registros dentro de un window.
+            partition_by=['base_sku'] #Los 'windows' se van a agrupar según el valor de 'base_sku'. Por cada 'base_sku' se va a tener un window.
+        )
 
-    order_fully_scanned = not order_product.objects.filter(order=order_instance).exclude(quantity_scanned=F('quantity')).exists()
+        #Al final, cada registro del query tendrán dos campos adicionales:
+        #base_sku --> El 'sku base' vinculado a la órden. Este sku va a permitir agrupar los skus base con los skus derivados al momento de imprimir las órdenes.
+        #sku_group_count --> La cantidad de registros que tiene cada window con el mismo 'base_sku'.
+    ).order_by('-sku_group_count', 'base_sku', 'product_sku')
 
-    if order_fully_scanned:
-        order_instance.status = 'prepared'
-        order_instance.save()
-        
-        redirect_url = reverse('orders:order_group', kwargs={'id': group_instance.id})
-        response = HttpResponse(status=200)
-        response['HX-Redirect'] = redirect_url
-        return response
-    
+    #Finalmente, el query retornado en la función 'organize_readyToPrint_orders' se ordenará con el siguiente órden:
+    #1. -sku_group_count: Primero se van a ordenar de mayor a menor según el número de órdenes por window. Los windows con más órdenes apareceran primero.
 
-    context = {
-        'order': order_instance,
-        'order_group': group_instance,
-    }
+    #2. Se van a agrupar por 'base_sku'. Esto va a agrupar todos los skus que estén vinculados a un mismo sku base y va a evitar que órdenes de diferentes windows pero con el mismo 'sku_group_count' se entremezclen entre sí.
 
-    return render(request, 'orders/partials/scanned_order.html', context)
-
+    #3. Al final se agrupan con el campo 'sku_seller' para agrupar los mismos skus genéricos dentro de un window y evitar que se mezclen entre sí. Se usa el Min() para evitar duplicar órdenes compuestas, si no se usará, el query consideraría ordenar cada order_product.
 
 def orders(request, slug):
     marketplace_instance = marketplace.objects.get(slug=slug)
@@ -215,25 +143,18 @@ def orders(request, slug):
 
 
     #En esta lista, se va a almacenar diccionarios con la data necesaria para renderizar las ordenes listas para imprimir cuando se active el modal para confirmar la impresión. Cada diccionario de la lista representa un grupo de data, en este caso hay un diccionario para colecta y otro para flex. Independiente del diccionario, todos usan la misma estructura html, esto se hace esencialmente para evitar escribir html redundante.
+    
     organized_orders_dict = []
+    
     #La lista parte vacía, solo se agregan diccionarios si es que la data correspondiente existe. Esto se hace para solo renderizar el contenido disponible en el template.
     #Cada diccionario contiene: 
     # El nombre para el id del div.
     # El query con los registros de ordenes ordenados por SKU del seller.
     # El nombre del botón para activar la solicitud post correspondiente. Hay un botón para colecta y otro para flex.
 
-    #Esto contendrá las órdenes organizadas por SKU para colecta que necesitan imprimirse.
-    organized_ml_collect = collect_ready_to_print.annotate(sku=Min('order_product__sku_seller')).order_by('sku')
 
-    if organized_ml_collect.exists():
-        organized_orders_dict.append({
-            'div_id': 'collect_labels_modal',
-            'orders_query': organized_ml_collect,
-            'btn_name': 'print_collect_orders',
-        })
-
-    #Esto contendrá las órdenes organizadas por SKU para flex que necesitan imprimirse.
-    organized_ml_flex = flex_ready_to_print.annotate(sku=Min('order_product__sku_seller')).order_by('sku')
+    organized_ml_flex = organize_readyToPrint_orders(flex_ready_to_print)
+    organized_ml_collect = organize_readyToPrint_orders(collect_ready_to_print)
 
     if organized_ml_flex.exists():
         organized_orders_dict.append({
@@ -242,6 +163,12 @@ def orders(request, slug):
             'btn_name': 'print_flex_orders',
         })
 
+    if organized_ml_collect.exists():
+        organized_orders_dict.append({
+            'div_id': 'collect_labels_modal',
+            'orders_query': organized_ml_collect,
+            'btn_name': 'print_collect_orders',
+        })
 
 
     if request.method == 'POST' and 'update_today_orders' in request.POST:
@@ -323,6 +250,7 @@ def orders(request, slug):
     }
 
     return render(request, 'orders/orders.html', context)
+
 
 def order_group(request, id):
     order_group_instance = get_object_or_404(orders_group, id=id)
@@ -409,6 +337,128 @@ def finish_order_group(request, group_id):
     }
 
     return render(request, 'orders/finish_order_group.html', context)
+
+
+
+#Este view va a recibir data a través de una solicitud POST de javascript Fetch Api
+@require_POST #Decorator to require that a view only accepts the POST method.
+def scanned_order_label(request, group_id):
+    group_instance = get_object_or_404(orders_group, id=group_id)
+
+    data = json.loads(request.body)
+    label_data = data.get('label_data_json')
+    
+    #Si es que viene de un ML Flex
+    try:
+        label_data = json.loads(label_data)
+        shipping_id = label_data['id']
+
+    #Si es que viene de un ML Colecta
+    except:
+        shipping_id = label_data
+
+    '''
+    if group_instance.logistic_type == 'collect':
+        shipping_id = label_data
+
+    elif group_instance.logistic_type == 'flex':
+        #print(label_data)
+        label_data = json.loads(label_data)
+
+        try:
+            shipping_id = label_data['id']
+
+        except:
+            return JsonResponse({'error': 'Esta etiqueta no corresponde a un pedido flex'})
+    '''
+
+    try:
+        order_instance = order.objects.get(shipping_id=shipping_id)
+
+    except order.DoesNotExist:
+        return JsonResponse({'error': 'No se encontro la orden vinculada a esta etiqueta dentro de este sistema'})
+
+    else:
+        if order_instance.orders_group != group_instance:
+                return JsonResponse({
+                    'error': 'La orden vinculada a esta etiqueta no pertencece al grupo de pedido actual'})
+
+        redirect_url = reverse('orders:prepare_order', kwargs={'group_id': group_id, 'id': order_instance.id})
+        return JsonResponse({'redirect_url': redirect_url})
+
+
+
+
+@require_POST #Decorator to require that a view only accepts the POST method.
+def scan_product_ean(request, id):
+    order_instance = order.objects.get(id=id)
+    group_instance = orders_group.objects.get(id=order_instance.orders_group.id)
+
+    scanned_ean = request.POST.get('barcode') #request.POST.get() is a method used to safely retrieve data submitted from an HTML form via an HTTP POST request.
+
+    try:
+        product_instance = product.objects.get(ean=scanned_ean)
+    except product.DoesNotExist:
+        response = HttpResponse('El código escaneado no está registrado en sistema', status=400)
+        return response
+
+    derivated_skus = derivated_sku.objects.filter(local_product=product_instance).values_list('sku', flat=True)
+    matching_skus = [product_instance.sku, *derivated_skus]
+    #El * es el operador de "unpacking" (desempaquetado) de Python. derivated_skus es un queryset/iterable (por values_list('sku', flat=True)) con cero o más strings de SKU. *derivated_skus expande esos elementos individualmente dentro de la lista 'matching_skus'.
+
+    #Sin desempaquetado (*):
+    #matching_skus --> ["YEP1015", ["YEP1015R", "YEP1015B"]]
+
+    #Con desempaquetado (*):
+    #matching_skus --> ["YEP1015", "YEP1015R", "YEP1015B"]
+
+    matching_order_products = order_product.objects.filter(order=order_instance, sku_seller__in=matching_skus) #Query que contiene los objetos 'order_product' ralacionado a la orden actual y en donde su campo 'sku_seller' esté contenido dentro de la lista 'matching_skus'. Este query va a contener el producto base de la orden y su skus derivados si es que existen.
+
+    order_product_instance = matching_order_products.filter(quantity_scanned__lt=F('quantity')).order_by('id').first() #Dentro del query recién creado, se va a tomar el 'order_product' que tenga su campo 'quantity_scanned' menor a su campo 'quantity'...
+
+    if order_product_instance is None: #En el caso en que el producto escaneado no esté relacionado a la orden
+        #En el caso en que el producto escaneado esté relacionado a la orden, pero ya fue completado (quantity_scanned=quantity).
+        if matching_order_products.exists():
+            response = HttpResponse('Este producto ya fue completado para esta orden', status=400)
+            return response
+
+        #En el caso en que el producto escaneado no esté relacionado a la orden.
+        response = HttpResponse('La orden actual no contiene el producto del código escaneado', status=400)
+        return response
+
+    if product_instance.stock == 0 and order_product_instance.prepared_without_stock == False:
+        response = HttpResponse(f'El producto {product_instance.sku} no tiene stock disponible', status=400)
+        #response['HX-Trigger'] = 'noStock'
+        response['No-Stock-product'] = json.dumps({'orderProductId': order_product_instance.id}) #Header personalizado del http request, aquí se pasará JSON con el id del 'order_product' sin stock. Esto se procesará en el archivo JS, dentro del evento 'htmx:responseError'.
+        return response
+
+
+    order_product_instance.quantity_scanned += 1
+    order_product_instance.save()
+
+    if order_product_instance.prepared_without_stock == False:
+        product_instance.stock -= 1
+        product_instance.save()
+
+    order_fully_scanned = not order_product.objects.filter(order=order_instance).exclude(quantity_scanned=F('quantity')).exists()
+
+    if order_fully_scanned:
+        order_instance.status = 'prepared'
+        order_instance.save()
+        
+        redirect_url = reverse('orders:order_group', kwargs={'id': group_instance.id})
+        response = HttpResponse(status=200)
+        response['HX-Redirect'] = redirect_url
+        return response
+    
+
+    context = {
+        'order': order_instance,
+        'order_group': group_instance,
+    }
+
+    return render(request, 'orders/partials/scanned_order.html', context)
+
 
 
 def prepare_order(request, group_id, id):
