@@ -28,7 +28,7 @@
             
             <div class="product-option-btn">&#8942;
                 <div class="product-dropdown-content">
-                    <a href="#" style="white-space: nowrap;">Ver detalle</a>
+                    <a href="{% url 'products:product_detail' product.id %}" style="white-space: nowrap;">Ver detalle</a>
                     <a href="{% url 'products:edit_product' product.id %}" style="white-space: nowrap;">Editar Producto</a>
                 </div>
             </div>

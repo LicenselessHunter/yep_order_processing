@@ -11,11 +11,14 @@ from django.utils import timezone
 from datetime import date
 from django.views.decorators.http import require_POST #The decorators in django.views.decorators.http can be used to restrict access to views based on the request method. These decorators will return a django.http.HttpResponseNotAllowed if the conditions are not met. Para este caso solo usaremos de las requests de tipo POST.
 from django.http import HttpResponse, JsonResponse
+#HttpResponse --> In contrast to HttpRequest objects, which are created automatically by Django, HttpResponse objects are your responsibility. Each view you write is responsible for instantiating, populating, and returning an HttpResponse. Typical usage is to pass the contents of the page, as a string, bytestring, or memoryview.
 from django.urls import reverse
 from django.contrib import messages
 import json
 from django_q.models import OrmQ
 from django.db import transaction
+
+from .ml_api_resources import get_shipment_label
 
 
 @csrf_exempt 
@@ -80,6 +83,19 @@ def organize_readyToPrint_orders(queryset):
     #2. Se van a agrupar por 'base_sku'. Esto va a agrupar todos los skus que estén vinculados a un mismo sku base y va a evitar que órdenes de diferentes windows pero con el mismo 'sku_group_count' se entremezclen entre sí.
 
     #3. Al final se agrupan con el campo 'sku_seller' para agrupar los mismos skus genéricos dentro de un window y evitar que se mezclen entre sí. Se usa el Min() para evitar duplicar órdenes compuestas, si no se usará, el query consideraría ordenar cada order_product.
+
+
+def initiate_ml_orders_update(marketplace_instance):
+
+    marketplace_instance = marketplace.objects.get(pk=marketplace_instance.pk)
+
+    if direct_orders_update_log.objects.filter(marketplace=marketplace_instance, finished=False).exists():
+        return False
+
+    direct_orders_update_log.objects.create(marketplace=marketplace_instance)
+
+    return True
+
 
 def orders(request, slug):
     marketplace_instance = marketplace.objects.get(slug=slug)
@@ -173,40 +189,61 @@ def orders(request, slug):
 
     if request.method == 'POST' and 'update_today_orders' in request.POST:
 
-        with transaction.atomic():
-            # Bloquea la fila de este marketplace hasta que termine la transacción.
-            # Así, si dos requests llegan casi al mismo tiempo, la segunda espera
-            # a que la primera haga commit antes de poder leer/escribir.
-            locked_marketplace = marketplace.objects.select_for_update().get(pk=marketplace_instance.pk)
+        manual_update_log_created = initiate_ml_orders_update(marketplace_instance)
 
-            if direct_orders_update_log.objects.filter(marketplace=locked_marketplace, finished=False).exists():
-                messages.error(request, 'Ya hay una actualización manual en progreso.')
-                return redirect('orders:orders', slug=marketplace_instance.slug)
+        if manual_update_log_created == False:
+            messages.error(request, 'Ya hay una actualización manual en progreso.')
 
-            direct_orders_update_log.objects.create(marketplace=locked_marketplace)
-
-        messages.success(request, 'Actualización de órdenes de mercado libre iniciado con éxito.')
-        async_task(f"orders.async_functions.manual_update_ml_orders")
+        else:
+            messages.success(request, 'Actualización de órdenes de mercado libre iniciado con éxito.')
+            async_task(f"orders.async_functions.manual_update_ml_orders")
+        
         return redirect('orders:orders', slug=marketplace_instance.slug)
 
 
-    if request.method == 'POST' and 'print_collect_orders' in request.POST:
 
-        if direct_orders_update_log.objects.filter(marketplace=marketplace_instance, finished=False).exists():
+    if request.method == 'POST' and 'print_collect_orders' in request.POST:
+        manual_update_log_created = initiate_ml_orders_update(marketplace_instance)
+
+        if manual_update_log_created == False:
             messages.error(request, 'No puedes imprimir cuando hay una actualización manual de órdenes en progreso.')
             return redirect('orders:orders', slug=marketplace_instance.slug)
 
-        async_task(f"orders.async_functions.print_ml_orders", organized_ml_collect)
+
+        shipping_ids_string = str(list(organized_ml_collect.values_list('shipping_id', flat=True))).replace(" ", "").replace("'", "")[1:-1]
+
+        FileHttpResponse = get_shipment_label(shipping_ids_string, 'collect')
+
+        if FileHttpResponse:
+            async_task(f"orders.async_functions.manual_update_ml_orders")
+            return FileHttpResponse
+    
+        else:
+            messages.error(request, 'Error en imprimir Órdenes de Colecta')
+            return redirect('orders:orders', slug=marketplace_instance.slug)
 
 
 
     if request.method == 'POST' and 'print_flex_orders' in request.POST:
+        manual_update_log_created = initiate_ml_orders_update(marketplace_instance)
 
-        if direct_orders_update_log.objects.filter(marketplace=marketplace_instance, finished=False).exists():
+        if manual_update_log_created == False:
             messages.error(request, 'No puedes imprimir cuando hay una actualización manual de órdenes en progreso.')
             return redirect('orders:orders', slug=marketplace_instance.slug)
 
-        async_task(f"orders.async_functions.print_ml_orders", organized_ml_flex)
+        
+
+        shipping_ids_string = str(list(organized_ml_flex.values_list('shipping_id', flat=True))).replace(" ", "").replace("'", "")[1:-1]
+
+        FileHttpResponse = get_shipment_label(shipping_ids_string, 'flex')
+
+        if FileHttpResponse:
+            async_task(f"orders.async_functions.manual_update_ml_orders")
+            return FileHttpResponse
+            
+        else:
+            messages.error(request, 'Error en imprimir Órdenes de Flex')
+            return redirect('orders:orders', slug=marketplace_instance.slug)
 
 
     if request.method == 'POST' and 'collect_prepare_btn' in request.POST:

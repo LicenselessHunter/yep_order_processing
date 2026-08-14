@@ -405,7 +405,8 @@ def manual_update_ml_orders():
     orders_update_log.finished=True
     orders_update_log.save()
 
-    
+
+'''
 def print_ml_orders(organized_ml_orders):
 
     shipping_ids_string = str(list(organized_ml_orders.values_list('shipping_id', flat=True))).replace(" ", "").replace("'", "")[1:-1]
@@ -422,3 +423,4 @@ def print_ml_orders(organized_ml_orders):
     #[1:-1] --> Finalmente, se quitarán los corchetes de la lista. Con esto, los shippings ids tendrán el formato para ser aceptado por el recurso de impresión de etiquetas de API de ML.
 
     get_shipment_label(shipping_ids_string)
+'''

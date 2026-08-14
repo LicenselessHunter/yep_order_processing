@@ -47,6 +47,14 @@ def create_product(request):
 
 
 
+def product_detail(request, id):
+    product_instance = get_object_or_404(product, id=id)
+
+    context = {
+        'product': product_instance,
+    }
+    return render(request, 'products/product_detail.html', context)
+
 def edit_product(request, id):
     product_instance = get_object_or_404(product, id=id)
     # modelformset_factory para manejar instancias existentes de BD

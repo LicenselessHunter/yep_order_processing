@@ -9,6 +9,9 @@ from django.db import transaction #module that provides a few ways to control ho
 #Django’s default transaction behavior:
 #Django’s default behavior is to run in autocommit mode. Each query is immediately committed to the database, unless a transaction is active. Django uses transactions or savepoints automatically to guarantee the integrity of ORM operations that require multiple queries, especially delete() and update() queries.
 
+from django.http import HttpResponse
+from django.utils import timezone
+
 def create_api_error(response):
     api_error.objects.create(
         api_status_code=response.status_code,
@@ -164,25 +167,37 @@ def get_max_dispatch_time(shipping_id):
 
 
 
-def get_shipment_label(shipping_ids_string):
-    access_token = ml_access_token() #Se llama a la función para obtener y/o renovar el access_token de mercado libre
+def get_shipment_label(shipping_ids_string, logistic_type):
+    
+    access_token = ml_access_token()
 
     headers = {
         'Authorization': f'Bearer {access_token}',
     }
 
-    # Carpeta Descargas del usuario actual en Windows
-    carpeta_descargas = Path('/mnt/c/Users/elias/Downloads')
-
-    response = requests.get(f'https://api.mercadolibre.com/shipment_labels?shipment_ids={shipping_ids_string}&response_type=pdf', headers=headers)
+    url = f'https://api.mercadolibre.com/shipment_labels?shipment_ids={shipping_ids_string}&response_type=pdf'
+    response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        ruta_archivo = carpeta_descargas / "etiquetas_ml.pdf"
-        with open(ruta_archivo, "wb") as f:
-            f.write(response.content)
-        print(f"Etiqueta guardada en: {ruta_archivo}")
+        #Aquí se crea el objeto HttpResponse, el cuál vamos a usar para entregarle el pdf al browser y lo procese.
+
+        #El primer parámetro es el contenido crudo del archivo pdf como bytestring, no hay necedidad de entenderlo, es solo para que lo procese la máquina.
+        #content_type --> It tells the user's web browser what kind of data it is receiving before it tries to process it. The browser instantly recognizes it as a PDF document.
+        FileHttpResponse = HttpResponse(response.content, content_type='application/pdf')
+
+        filename = f"etiquetas_ml_{logistic_type}_{timezone.now().strftime("%Y-%m-%d %H:%M:%S")}.pdf"
+        FileHttpResponse['Content-Disposition'] = f'attachment; filename="{filename}"'
+        #The HTTP Content-Disposition header indicates whether content should be displayed inline in the browser as a web page or part of a web page or downloaded as an attachment locally. The first parameter in the HTTP context is either inline (default value, indicating it can be displayed inside the Web page, or as the Web page) or attachment (indicating it should be downloaded, que es justamente el que uso).
+
+        #También aprovecho de usar el parámetro 'filename' para ponerle nombre al archivo.
+        
+        #The HTTP Content Disposition is a response-type header field that gives information on how to process the response payload and additional information such as filename when user saves it locally.
+
+        return FileHttpResponse
+        
     else:
-        print(f"Error {response.status_code}: {response.text}")
+        create_api_error(response)
+        return None
 
 
 def get_user_data(user_id):
