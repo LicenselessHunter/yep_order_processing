@@ -1,0 +1,32 @@
+form {
+    display: grid; 
+    background-color: rgb(130, 126, 126); 
+    padding: 1rem; 
+    align-items: center;
+    gap: 1rem;
+    border: 0.15rem solid #3e3d3d;
+    border-radius: 10%;
+}
+
+form p {
+    margin: 0;
+}
+
+#login-form-title {
+    place-self: center;
+}
+
+form input {
+    width: 100%;
+}
+
+#login-btn {
+    place-self: center;
+}
+
+#login-error {
+    padding: 0.1rem;
+    background-color: #e95555;
+    color: #f5e9e9;
+    border: 0.1rem solid #fecaca;
+}

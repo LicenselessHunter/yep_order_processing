@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'accounts',
     'orders',
     'products',
+    'import_export',
     'django_q', #Django Q2 is a native Django task queue, scheduler and worker application using Python multiprocessing. Doc: https://django-q2.readthedocs.io/en/master/index.html
 ]
 
