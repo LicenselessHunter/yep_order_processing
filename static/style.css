@@ -216,7 +216,12 @@ nav li:hover {
 
 
 /*---- product_catalogue css ----*/
-.products-wrapper {
+#total-product-count {
+    font-style: italic;
+    font-weight: 100;
+}
+
+#products-wrapper {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -338,7 +343,11 @@ nav li:hover {
 
 }
 
-
+@media (min-width: 1090px){
+    #products-wrapper {
+        margin-right: 2rem;
+    }
+}
 
 /*---- ORDERS CSS ----*/
 .order_totals_container {
@@ -744,8 +753,82 @@ nav li:hover {
 }
 
 
+/*------ PRODUCT DETAIL PAGE ------*/
+#product-detail-container {
+    display: flex; 
+    background-color: #3b3939; 
+    color: white; 
+    border: 0.3rem solid rgb(161, 156, 156); 
+    border-radius: 1rem; 
+    align-items: center; 
+    flex-direction: column; 
+    gap: 2.5rem; 
+    padding-block: 2rem; 
+    padding-inline: 1rem; 
+    text-align: center;
+    max-width: 35rem;
+}
 
+#product-detail-title-section {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 0.3rem;
+}
 
+#product-detail-title-section p {
+    max-width: 40ch;
+}
+
+#product-detail-title-section h2, p {
+    margin: 0;
+}
+
+#product-detail-descriptive-container {
+    display: grid;
+    gap: 2rem;
+}
+
+.product-descriptive-data-section {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.product-descriptive-data-section i{
+    color:rgb(143, 146, 148);
+}
+
+.product-descriptive-data-section p{
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+#descriptive-data-stock {
+    font-size: 1.5rem;
+}
+
+#descriptive-data-time {
+    max-width: 21ch
+}
+
+#product-detail-derivated-section ol {
+    padding: 0; 
+    text-align: left;
+}
+
+@media (min-width: 640px){
+    #product-detail-descriptive-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 3.5rem;
+    }
+}
+
+@media (min-width: 1090px){
+    #product-detail-container {
+        margin-left: 3rem;
+    }
+}
 
 /*---- GROUPS OF ORDERS CSS ----*/
 #group-of-orders-wrapper {

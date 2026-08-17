@@ -49,11 +49,14 @@ def create_product(request):
 
 def product_detail(request, id):
     product_instance = get_object_or_404(product, id=id)
+    derivated_skus = derivated_sku.objects.filter(local_product=product_instance)
 
     context = {
         'product': product_instance,
+        'derivated_skus': derivated_skus,
     }
     return render(request, 'products/product_detail.html', context)
+
 
 def edit_product(request, id):
     product_instance = get_object_or_404(product, id=id)

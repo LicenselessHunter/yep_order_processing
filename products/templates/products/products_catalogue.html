@@ -9,7 +9,14 @@
 {% block content %}
 <h1>Catálogo de productos</h1>
 
-<div class="products-wrapper">
+{% if products.count == 0 %}
+    <i>No hay productos dentro del catálogo</i>
+
+{% elif products.count > 1 %}
+    <h4 id="total-product-count">El catálogo cuenta con {{products.count}} productos en total</h4>
+{% endif %}
+
+<div id="products-wrapper">
     {% for product in products %}
         <div class="product-div">
 

@@ -1,8 +1,54 @@
 {% extends 'global.html' %}
 {% load static %}
-{% block title %}Detalle del producto{% endblock %}
+{% block title %}Detalle del producto {{product.sku}}{% endblock %}
 
 {% block content %}
-{{product}}
+
+<div id="product-detail-container">
+
+    <div id="product-detail-title-section">
+        <h2>{{product.sku}}</h2>
+        <p>{{product.product_name}}</p>
+    </div>
+
+    <div id="product-detail-descriptive-container">
+        <div class="product-descriptive-data-section">
+            <i>Stock:</i>
+            <p id="descriptive-data-stock">{{product.stock}}</p>
+        </div>
+
+        <div class="product-descriptive-data-section">
+            <i>Categoría:</i>
+
+            {% if product.category is None %}
+                <p>Sin categoría</p>
+            {% else %}
+                <p>{{product.category}}</p>
+            {% endif %}
+        </div>
+
+        <div class="product-descriptive-data-section">
+            <i>Ean:</i>
+            <p>{{product.ean}}</p>
+        </div>
+
+        <div class="product-descriptive-data-section">
+            <i>Fecha de ingreso:</i>
+            <p id="descriptive-data-time">{{product.creation_date_time}}</p>
+        </div>
+    </div>
+
+    {% if derivated_skus %}
+        <div id="product-detail-derivated-section">
+            <h3>SKUs derivados</h3>
+            <ol>
+                {% for obj in derivated_skus %}
+                    <li>{{obj.sku}}</li>
+                {% endfor %}
+            </ol>
+        </div>
+    {% endif %}
+
+</div>
 
 {% endblock %}
