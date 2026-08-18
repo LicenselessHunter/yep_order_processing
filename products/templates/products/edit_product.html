@@ -3,13 +3,11 @@
 {% block title %}Editar Producto{% endblock %}
 
 {% block content %}
-<h1 class = "form-title">Edición de producto</h1>
+<h1 class = "form-title">Edición de producto {{ product.sku }}</h1>
 
 <form id="product-form" method="post">
     <div class = "base-product-form">
         {% csrf_token %}
-
-        <p>Sku del producto: {{ product.sku }}</p>
 
         {% for field in form %}
             {% if field.name == 'ean' %}
@@ -44,7 +42,6 @@
         {% if existing_derivated_formset.total_form_count != 0 %}
             <h3>SKU/s derivado/s</h3>
             <div id="existing-derivated-container">
-                <!--{{ existing_derivated_formset }}-->
                 {% for form in existing_derivated_formset %}
                     <div class = "existing-derivated-form">{{ form }}</div>
                 {% endfor %}
@@ -55,6 +52,9 @@
 
     <div class="derivated-skus-form">
         <h3>Crear nuevo/s SKU/s derivado/s</h3>
+
+        <p>Estos skus van a van a compartir las mismas propiedades del producto base</p>
+
         <div id="generate-derivated-forms">
             <p>Generar formularios</p>
             <input id="derivated-count-input" type="number" min="0" max="10">

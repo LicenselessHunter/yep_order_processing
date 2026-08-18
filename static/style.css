@@ -254,7 +254,7 @@ nav li:hover {
 }
 
 .product-data-name {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
 }
 
 
@@ -312,6 +312,38 @@ nav li:hover {
 
 .product-dropdown-content a:hover {
     background-color: rgb(55, 54, 54); 
+}
+
+@media (max-width: 360px){
+    .product-div {
+        gap: 0.8rem;
+        grid-template-columns: 6fr 1fr;
+        grid-template-rows: repeat(3, auto);
+        padding: 1.3rem;
+    }
+
+    #product-category-div {
+        grid-column-start: 1;
+    }
+
+    #product-stock-div {
+        grid-column-start: 1;
+        grid-row-start: 3;
+        grid-row-end: 3;
+        justify-self: left;
+    }
+    
+    .product-data-stock {
+        font-size: 1rem;
+    }
+
+    .product-option-btn {
+        grid-row-start: 1;
+        grid-row-end: 1;
+        grid-column-start: 2;
+        align-self: start;
+    }
+
 }
 
 @media (min-width: 640px){
@@ -588,7 +620,10 @@ nav li:hover {
     width: 100%;
 }
 
-
+.base-product-form {
+    display: grid;
+    gap: 1rem;
+}
 
 /*Sección del ean del form base del producto*/
 #product-ean-form-section {
@@ -663,6 +698,17 @@ nav li:hover {
 /*FIN FORM de skus derivados que ya existen*/
 
 
+
+.derivated-skus-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.derivated-skus-form h3 {
+    margin: 0;
+}
+
+
 /*Generación de forms de skus derivados*/
 #generate-derivated-forms {
     display: grid;
@@ -685,6 +731,11 @@ nav li:hover {
 
 
 /*Forms de skus derivados generados*/
+#derivated-formset-container {
+    display: grid;
+    gap: 1rem;
+}
+
 #derivated-formset-container p {
     display: grid;
     column-gap: 1rem;
@@ -810,6 +861,15 @@ nav li:hover {
 
 #descriptive-data-time {
     max-width: 21ch
+}
+
+#product-detail-derivated-section {
+    display: grid;
+    place-items: center;
+}
+
+#product-detail-derivated-section p{
+    max-width: 40ch;
 }
 
 #product-detail-derivated-section ol {
