@@ -30,3 +30,12 @@ class derivated_sku_resource(resources.ModelResource):
         model = models.derivated_sku
         fields = ('local_product_header', 'derivated_sku_header')
         import_id_fields = ('derivated_sku_header',)
+
+
+
+class product_category_admin_resource(resources.ModelResource):
+
+    class Meta:
+        model = models.product_category
+        fields = ('category_name', 'priority_n')
+        import_id_fields = ('category_name',)
